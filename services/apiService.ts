@@ -1,9 +1,16 @@
-import { Item, ItemFormData, ApiResponse } from '../types';
+import {
+  Item,
+  ItemFormData,
+  Player,
+  Tournament,
+  TournamentFormData,
+} from "../types";
+import { v4 as uuidv4 } from "uuid";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const MOCK_DELAY = 600; // ms
 
-// Initial mock data
+// --- Mock Data ---
 let mockItems: Record<string, Item> = {
   "0": {
     id: "101",
@@ -14,20 +21,22 @@ let mockItems: Record<string, Item> = {
     stock: 12,
     description: "High speed electric RC car with brushless motor.",
     status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?q=80&w=200&auto=format&fit=crop",
-    lastUpdated: "2023-10-25T10:00:00Z"
+    imageUrl:
+      "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?q=80&w=200&auto=format&fit=crop",
+    lastUpdated: "2023-10-25T10:00:00Z",
   },
   "1": {
     id: "102",
     name: "Eagle Eye Drone Pro",
     sku: "DR-PRO-002",
     category: "Drones",
-    price: 899.50,
+    price: 899.5,
     stock: 5,
     description: "4K camera drone with GPS stabilization.",
     status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1473968512647-3e447244af8f?q=80&w=200&auto=format&fit=crop",
-    lastUpdated: "2023-10-26T14:30:00Z"
+    imageUrl:
+      "https://images.unsplash.com/photo-1473968512647-3e447244af8f?q=80&w=200&auto=format&fit=crop",
+    lastUpdated: "2023-10-26T14:30:00Z",
   },
   "2": {
     id: "103",
@@ -38,79 +47,240 @@ let mockItems: Record<string, Item> = {
     stock: 45,
     description: "Factory sealed Commander Legends draft booster box.",
     status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?q=80&w=200&auto=format&fit=crop",
-    lastUpdated: "2023-10-27T09:15:00Z"
+    imageUrl:
+      "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?q=80&w=200&auto=format&fit=crop",
+    lastUpdated: "2023-10-27T09:15:00Z",
   },
-  "3": {
-    id: "104",
-    name: "Gundam RX-78-2 Ver. Ka",
-    sku: "MD-GUN-004",
-    category: "Model Kits",
-    price: 65.00,
-    stock: 0,
-    description: "Master Grade 1/100 scale model kit.",
-    status: "archived",
-    imageUrl: "https://images.unsplash.com/photo-1614713568397-b30b779d041c?q=80&w=200&auto=format&fit=crop",
-    lastUpdated: "2023-10-20T11:00:00Z"
-  },
-  "4": {
-    id: "105",
-    name: "Beyblade Burst Surge",
-    sku: "BEY-SUR-001",
-    category: "Beyblade",
-    price: 15.99,
-    stock: 30,
-    description: "Speedstorm spinning top starter pack.",
-    status: "active",
-    lastUpdated: "2023-10-28T11:00:00Z"
-  },
-  "5": {
-    id: "106",
-    name: "Unmatched: Battle of Legends",
-    sku: "UNM-VOL1-001",
-    category: "Unmatched",
-    price: 39.99,
-    stock: 8,
-    description: "Volume 1 featuring Medusa, Sinbad, Alice, and King Arthur.",
-    status: "active",
-    lastUpdated: "2023-10-28T12:00:00Z"
-  }
 };
 
-class ApiService {
-  private baseUrl = "https://api.upkeephobbies.com/v1"; // Fictional URL
+let mockPlayers: Player[] = [
+  {
+    id: "692a062ccd45f83fab8055a5",
+    name: "Ninong",
+    email: "ninong@upkeep.com",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ninong",
+    beybladeStats: {
+      spinFinishes: 7,
+      overFinishes: 4,
+      burstFinishes: 0,
+      extremeFinishes: 1,
+    },
+  },
+  {
+    id: "702b173dde56g94gac9166b67fab2b6cdef193137baaebca43e3082c075f7914",
+    name: "Alice",
+    email: "alice@example.com",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
+    beybladeStats: {
+      spinFinishes: 10,
+      overFinishes: 5,
+      burstFinishes: 2,
+      extremeFinishes: 3,
+    },
+  },
+  {
+    id: "712c284eff67h05hbd0277c78gb3c7ddef2042248cbbeddb54f4193d186g8025",
+    name: "Bob",
+    email: "bob@example.com",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
+    beybladeStats: {
+      spinFinishes: 3,
+      overFinishes: 8,
+      burstFinishes: 1,
+      extremeFinishes: 0,
+    },
+  },
+];
 
-  /**
-   * Helper to normalize the weird numeric-key object response into a clean Array.
-   * Input: { "0": { id: 1... }, "1": { id: 2... } }
-   * Output: [ { id: 1... }, { id: 2... } ]
-   */
-  private normalizeResponse<T>(data: ApiResponse<T> | T[] | any): T[] {
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === 'object') {
+let mockTournaments: Tournament[] = [
+  {
+    _id: "692a0693cd45f83fab8055ba",
+    name: "Ranked Game November 29, 2025",
+    date: new Date("2025-11-28T13:48:00.000Z"),
+    game: "Beyblade X",
+    season: 1,
+    status: "Completed",
+    participants: [
+      "692a062ccd45f83fab8055af",
+      "692a062ccd45f83fab8055b0",
+      "692a062ccd45f83fab8055b1",
+      "692a062ccd45f83fab8055b2",
+      "692a062ccd45f83fab8055b3",
+      "692a062ccd45f83fab8055b4",
+      "692a062ccd45f83fab8055b5",
+      "692a062ccd45f83fab8055b6",
+      "692a062ccd45f83fab8055b7",
+      "692a062ccd45f83fab8055b8",
+      "692a062ccd45f83fab8055a5",
+      "692a062ccd45f83fab8055a6",
+      "692a062ccd45f83fab8055a7",
+      "692a062ccd45f83fab8055a8",
+      "692a062ccd45f83fab8055a9",
+      "692a062ccd45f83fab8055aa",
+      "692a062ccd45f83fab8055ab",
+      "692a062ccd45f83fab8055ac",
+      "692a062ccd45f83fab8055ad",
+      "692a062ccd45f83fab8055ae",
+    ],
+    maxPlayers: 20,
+    standings: [
+      {
+        userId: "692a062ccd45f83fab8055a5",
+        rank: 1,
+        score: "4-0-0",
+        notes: "Undefeated",
+      },
+      {
+        userId: "692a062ccd45f83fab8055a6",
+        rank: 2,
+        score: "3-1-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055a7",
+        rank: 3,
+        score: "3-1-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055a8",
+        rank: 4,
+        score: "3-1-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055a9",
+        rank: 5,
+        score: "3-1-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055aa",
+        rank: 6,
+        score: "3-1-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055ab",
+        rank: 7,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055ac",
+        rank: 8,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055ad",
+        rank: 9,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055ae",
+        rank: 10,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055af",
+        rank: 11,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b0",
+        rank: 12,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b1",
+        rank: 13,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b2",
+        rank: 14,
+        score: "2-2-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b3",
+        rank: 15,
+        score: "1-3-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b4",
+        rank: 16,
+        score: "1-3-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b5",
+        rank: 17,
+        score: "1-3-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b6",
+        rank: 18,
+        score: "1-3-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b7",
+        rank: 19,
+        score: "1-3-0",
+        notes: "",
+      },
+      {
+        userId: "692a062ccd45f83fab8055b8",
+        rank: 20,
+        score: "0-4-0",
+        notes: "",
+      },
+    ],
+  },
+];
+
+// --- ApiService ---
+class ApiService {
+  private baseUrl =
+    "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging"; // Fictional API
+
+  private async simulateDelay() {
+    return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
+  }
+
+  private normalizeResponse<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (
+      data &&
+      typeof data === "object" &&
+      Object.keys(data).every((k) => !isNaN(Number(k)))
+    ) {
       return Object.values(data);
     }
     return [];
   }
 
-  private async simulateDelay() {
-    return new Promise(resolve => setTimeout(resolve, MOCK_DELAY));
-  }
-
+  // --- Items ---
   async getItems(): Promise<Item[]> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      // Return the raw object format to test normalization
-      return this.normalizeResponse(mockItems);
+      return this.normalizeResponse<Item>(mockItems);
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/getItems`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
-      return this.normalizeResponse(data);
+      return this.normalizeResponse<Item>(data);
     } catch (error) {
       console.error("Failed to fetch items:", error);
       throw error;
@@ -120,111 +290,271 @@ class ApiService {
   async getOneItem(id: string): Promise<Item | null> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      const items = Object.values(mockItems);
-      return items.find(i => i.id === id) || null;
+      return Object.values(mockItems).find((i) => i.id === id) || null;
     }
 
-    try {
-      const response = await fetch(`${this.baseUrl}/getOneItem?id=${id}`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`Failed to fetch item ${id}:`, error);
-      throw error;
-    }
+    const response = await fetch(`${this.baseUrl}/getOneItem?id=${id}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
   }
 
   async createItem(itemData: ItemFormData): Promise<Item> {
     const newItem: Item = {
       ...itemData,
-      id: Math.random().toString(36).substr(2, 9),
-      lastUpdated: new Date().toISOString()
+      id: uuidv4(),
+      lastUpdated: new Date().toISOString(),
     };
 
     if (USE_MOCK) {
       await this.simulateDelay();
-      // Find next numeric key
-      const keys = Object.keys(mockItems).map(Number);
-      const nextKey = (Math.max(...keys, -1) + 1).toString();
-      mockItems = { ...mockItems, [nextKey]: newItem };
+      const nextKey = (
+        Math.max(...Object.keys(mockItems).map(Number), -1) + 1
+      ).toString();
+      mockItems[nextKey] = newItem;
       return newItem;
     }
 
-    try {
-      const response = await fetch(`${this.baseUrl}/createItems`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
-      });
-      const data = await response.json();
-      // Assuming create returns the created item or ID
-      return data;
-    } catch (error) {
-      console.error("Failed to create item:", error);
-      throw error;
-    }
+    const response = await fetch(`${this.baseUrl}/createItems`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newItem),
+    });
+    return await response.json();
   }
 
   async updateItem(id: string, updates: Partial<Item>): Promise<Item> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      const entry = Object.entries(mockItems).find(([_, val]) => val.id === id);
-      if (!entry) throw new Error('Item not found');
-      
-      const [key, currentItem] = entry;
-      const updatedItem = { ...currentItem, ...updates, lastUpdated: new Date().toISOString() };
-      mockItems = { ...mockItems, [key]: updatedItem };
-      return updatedItem;
+      const key = Object.keys(mockItems).find((k) => mockItems[k].id === id);
+      if (!key) throw new Error("Item not found");
+      mockItems[key] = {
+        ...mockItems[key],
+        ...updates,
+        lastUpdated: new Date().toISOString(),
+      };
+      return mockItems[key];
     }
 
-    try {
-      const response = await fetch(`${this.baseUrl}/updateItem`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates })
-      });
-      return await response.json();
-    } catch (error) {
-      console.error("Failed to update item:", error);
-      throw error;
-    }
+    const response = await fetch(`${this.baseUrl}/updateItem`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    });
+    return await response.json();
   }
 
   async deleteItem(id: string): Promise<boolean> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      const entry = Object.entries(mockItems).find(([_, val]) => val.id === id);
-      if (entry) {
-        const [key] = entry;
-        const { [key]: deleted, ...rest } = mockItems;
-        mockItems = rest;
-        return true;
-      }
-      return false;
+      const key = Object.keys(mockItems).find((k) => mockItems[k].id === id);
+      if (!key) return false;
+      delete mockItems[key];
+      return true;
     }
 
+    const response = await fetch(`${this.baseUrl}/deleteItems`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    return response.ok;
+  }
+
+  async sendNewsletter(
+    subject: string,
+    content: string,
+    itemIds: string[]
+  ): Promise<boolean> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      console.log(`Newsletter sent: ${subject}, items: ${itemIds.join(", ")}`);
+      return true;
+    }
+    // Real API implementation here
+    return true;
+  }
+
+  // --- Players ---
+  async getPlayers(): Promise<Player[]> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      return mockPlayers;
+    }
+
+    const response = await fetch(`${this.baseUrl}/getPlayers`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const data = await response.json();
+    return this.normalizeResponse<Player>(data);
+  }
+
+  async createPlayer(playerData: Partial<Player>): Promise<Player> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const newPlayer: Player = {
+        id: uuidv4(),
+        name: playerData.name || "",
+        email: playerData.email || "",
+        avatar: playerData.avatar || "",
+        beybladeStats: playerData.beybladeStats || {
+          spinFinishes: 0,
+          overFinishes: 0,
+          burstFinishes: 0,
+          extremeFinishes: 0,
+        },
+      };
+      mockPlayers.push(newPlayer);
+      return newPlayer;
+    }
+
+    const response = await fetch(`${this.baseUrl}/createPlayer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(playerData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Network response was not ok: ${response.status} ${errorText}`
+      );
+    }
+
+    const result = await response.json();
+    console.log("Create player API response:", result);
+    return result;
+  }
+
+  async updatePlayer(id: string, updates: Partial<Player>): Promise<Player> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const index = mockPlayers.findIndex((p) => p.id === id);
+      if (index === -1) throw new Error("Player not found");
+      const updatedPlayer = {
+        ...mockPlayers[index],
+        ...updates,
+        lastUpdated: new Date().toISOString(),
+      };
+      mockPlayers[index] = updatedPlayer;
+      return updatedPlayer;
+    }
+
+    const url = `${this.baseUrl}/updatePlayer/${id}`;
+
     try {
-      const response = await fetch(`${this.baseUrl}/deleteItems`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
       });
-      return response.ok;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Network response was not ok: ${response.status} ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("API response:", result);
+
+      // Ensure the response always has an ID
+      return {
+        ...result,
+        id: result.id || id,
+      };
     } catch (error) {
-      console.error("Failed to delete item:", error);
+      console.error("Fetch error:", error);
       throw error;
     }
   }
 
-  async sendNewsletter(subject: string, content: string, itemIds: string[]): Promise<boolean> {
+  // --- Tournaments ---
+  async getTournaments(): Promise<Tournament[]> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      console.log(`Sending newsletter: ${subject} with ${itemIds.length} items.`);
+      return mockTournaments;
+    }
+
+    const response = await fetch(`${this.baseUrl}/getGasgasan`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const data = await response.json();
+    return this.normalizeResponse<Tournament>(data);
+  }
+
+  async createTournament(
+    tournamentData: TournamentFormData
+  ): Promise<Tournament> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const newTournament: Tournament = {
+        ...tournamentData,
+        _id: uuidv4(),
+      };
+      mockTournaments.push(newTournament);
+      return newTournament;
+    }
+
+    const response = await fetch(`${this.baseUrl}/gasgasanCreate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tournamentData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Network response was not ok: ${response.status} ${errorText}`
+      );
+    }
+
+    return await response.json();
+  }
+
+  async updateTournament(
+    id: string,
+    updates: Partial<Tournament>
+  ): Promise<Tournament> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const index = mockTournaments.findIndex((t) => t._id === id);
+      if (index === -1) throw new Error("Tournament not found");
+      const updatedTournament = {
+        ...mockTournaments[index],
+        ...updates,
+      };
+      mockTournaments[index] = updatedTournament;
+      return updatedTournament;
+    }
+
+    const response = await fetch(`${this.baseUrl}/updateTournament/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Network response was not ok: ${response.status} ${errorText}`
+      );
+    }
+
+    return await response.json();
+  }
+
+  async deleteTournament(id: string): Promise<boolean> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const index = mockTournaments.findIndex((t) => t._id === id);
+      if (index === -1) return false;
+      mockTournaments.splice(index, 1);
       return true;
     }
-    
-    // Mock implementation for real API call
-    return true;
+
+    const response = await fetch(`${this.baseUrl}/deleteTournament/${id}`, {
+      method: "DELETE",
+    });
+    return response.ok;
   }
 }
 

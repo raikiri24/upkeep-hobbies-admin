@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
-import Login from './components/Login';
 import Inventory from './components/Inventory';
 import Dashboard from './components/Dashboard';
 import Newsletter from './components/Newsletter';
-import { LayoutDashboard, Package, LogOut, Settings, Menu, Mail } from 'lucide-react';
+import Users from './components/Users'; // Import the new Users component
+import Tournaments from './components/Tournaments'; // Import the new Tournaments component
+import { LayoutDashboard, Package, Settings, Menu, Mail, Users as UsersIcon, Trophy } from 'lucide-react'; // Import Trophy icon
 
-type View = 'dashboard' | 'inventory' | 'newsletter';
+type View = 'dashboard' | 'inventory' | 'newsletter' | 'users' | 'tournaments'; // Add 'tournaments' to the View type
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const savedView = localStorage.getItem('currentView');
+    return (savedView as View) || 'dashboard';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
-
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
 
   const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
     <button
       onClick={() => {
         setCurrentView(view);
+        localStorage.setItem('currentView', view);
         setIsSidebarOpen(false);
       }}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
@@ -65,6 +62,8 @@ const App: React.FC = () => {
             <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem view="inventory" icon={Package} label="Inventory" />
             <NavItem view="newsletter" icon={Mail} label="Newsletter" />
+            <NavItem view="users" icon={UsersIcon} label="Users" /> {/* New NavItem for Users */}
+            <NavItem view="tournaments" icon={Trophy} label="Tournaments" /> {/* New NavItem for Tournaments */}
           </nav>
 
           <div className="pt-6 border-t border-slate-800 space-y-2">
@@ -72,13 +71,7 @@ const App: React.FC = () => {
               <Settings size={20} />
               <span>Settings</span>
             </button>
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all font-medium"
-            >
-              <LogOut size={20} />
-              <span>Logout</span>
-            </button>
+            
           </div>
         </div>
       </aside>
@@ -111,6 +104,8 @@ const App: React.FC = () => {
             {currentView === 'dashboard' && <Dashboard />}
             {currentView === 'inventory' && <Inventory />}
             {currentView === 'newsletter' && <Newsletter />}
+            {currentView === 'users' && <Users />}{/* Render Users component */}
+            {currentView === 'tournaments' && <Tournaments />}{/* Render Tournaments component */}
           </div>
         </div>
       </main>
