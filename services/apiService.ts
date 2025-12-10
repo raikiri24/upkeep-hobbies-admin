@@ -4,10 +4,17 @@ import {
   Player,
   Tournament,
   TournamentFormData,
+  GoogleUser,
+  AuthUser,
+  AuthResponse,
+  LoginCredentials,
+  RegisterData,
+  User,
 } from "../types";
 import { v4 as uuidv4 } from "uuid";
+import { API_CONFIG } from "./googleOAuth";
 
-const USE_MOCK = false;
+const USE_MOCK = API_CONFIG.baseUrl.includes('localhost') || API_CONFIG.baseUrl.includes('staging');
 const MOCK_DELAY = 600; // ms
 
 // --- Mock Data ---
@@ -89,6 +96,21 @@ let mockPlayers: Player[] = [
       burstFinishes: 1,
       extremeFinishes: 0,
     },
+  },
+];
+
+let mockUsers: User[] = [
+  {
+    id: "admin-1",
+    email: "admin@upkeep.com",
+    name: "Admin User",
+    role: "admin",
+  },
+  {
+    id: "editor-1",
+    email: "editor@upkeep.com",
+    name: "Editor User",
+    role: "editor",
   },
 ];
 
@@ -250,8 +272,7 @@ let mockTournaments: Tournament[] = [
 
 // --- ApiService ---
 class ApiService {
-  private baseUrl =
-    "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging"; // Fictional API
+  private baseUrl = API_CONFIG.baseUrl;
 
   private async simulateDelay() {
     return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
@@ -555,6 +576,201 @@ class ApiService {
       method: "DELETE",
     });
     return response.ok;
+  }
+
+  // --- Authentication ---
+  async loginWithGoogle(googleUser: GoogleUser): Promise<AuthResponse> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+
+      // Check if user exists in our mock database
+      let existingUser = mockUsers.find((u) => u.email === googleUser.email);
+
+      if (existingUser) {
+        // User exists, return login success
+        return {
+          success: true,
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            name: existingUser.name,
+            avatar: existingUser.avatar,
+            role: existingUser.role,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+          },
+          token: `mock_token_${Date.now()}`,
+        };
+      } else {
+        // User doesn't exist, auto-register
+        const newUser: AuthUser = {
+          id: uuidv4(),
+          email: googleUser.email,
+          name: googleUser.name,
+          avatar: googleUser.picture,
+          role: "editor", // Default role for new users
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+        };
+
+        mockUsers.push({
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+        });
+
+        return {
+          success: true,
+          user: newUser,
+          token: `mock_token_${Date.now()}`,
+        };
+      }
+    }
+
+    // Real API implementation
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(googleUser),
+      });
+
+      if (!response.ok) {
+        throw new Error("Google authentication failed");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Google login error:", error);
+      return {
+        success: false,
+        message: "Authentication failed",
+      };
+    }
+  }
+
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+
+      const user = mockUsers.find(
+        (u) =>
+          u.email === credentials.email &&
+          // In a real app, we'd check hashed password
+          credentials.password === "password123"
+      );
+
+      if (user) {
+        return {
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+            role: user.role,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+          },
+          token: `mock_token_${Date.now()}`,
+        };
+      } else {
+        return {
+          success: false,
+          message: "Invalid email or password",
+        };
+      }
+    }
+
+    // Real API implementation
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || "Login failed",
+        };
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        message: "Network error occurred",
+      };
+    }
+  }
+
+  async register(data: RegisterData): Promise<AuthResponse> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+
+      // Check if user already exists
+      const existingUser = mockUsers.find((u) => u.email === data.email);
+      if (existingUser) {
+        return {
+          success: false,
+          message: "User with this email already exists",
+        };
+      }
+
+      // Create new user
+      const newUser: AuthUser = {
+        id: uuidv4(),
+        email: data.email,
+        name: data.name,
+        role: "editor",
+        createdAt: new Date().toISOString(),
+      };
+
+      mockUsers.push({
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      });
+
+      return {
+        success: true,
+        user: newUser,
+        token: `mock_token_${Date.now()}`,
+      };
+    }
+
+    // Real API implementation
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || "Registration failed",
+        };
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Registration error:", error);
+      return {
+        success: false,
+        message: "Network error occurred",
+      };
+    }
   }
 }
 

@@ -14,8 +14,11 @@ export interface Item {
 export type ItemFormData = Omit<Item, 'id' | 'lastUpdated'>;
 
 export interface User {
-  username: string;
+  id: string;
+  email: string;
+  name: string;
   role: 'admin' | 'editor';
+  avatar?: string;
 }
 
 export interface ApiResponse<T> {
@@ -64,3 +67,40 @@ export interface Tournament {
 }
 
 export type TournamentFormData = Omit<Tournament, '_id'>;
+
+export interface GoogleUser {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  given_name?: string;
+  family_name?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  role: 'admin' | 'editor';
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: AuthUser;
+  token?: string;
+  message?: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  name: string;
+  password: string;
+}
