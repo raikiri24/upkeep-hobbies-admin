@@ -6,7 +6,21 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
 
   return {
-    base: "/upkeep-hobbies-admin/", // ✅ GitHub Pages base path
+    base: mode === 'production' ? "/upkeep-hobbies-admin/" : "/",
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            router: ['react-router-dom'],
+            ui: ['lucide-react', 'recharts', 'sweetalert2']
+          }
+        }
+      }
+    },
     server: {
       port: 3000,
       host: "0.0.0.0",
