@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
 import { Item, ItemFormData } from '../types';
-import { Plus, Trash2, Edit2, Search, Package, AlertCircle, Loader2, Save, X, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, Package, AlertCircle, Loader2, Save, X, ImageIcon, ShoppingCart } from 'lucide-react';
+import { DialogService } from '../services/dialogService';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 const Inventory: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -39,13 +41,14 @@ const Inventory: React.FC = () => {
   }, [fetchItems]);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    const result = await DialogService.confirm('Are you sure you want to delete this item?');
+    if (result.isConfirmed) {
       try {
         await apiService.deleteItem(id);
         setItems(prev => prev.filter(item => item.id !== id));
       } catch (error) {
         console.error("Failed to delete", error);
-        alert('Failed to delete item.');
+        DialogService.error('Failed to delete item.');
       }
     }
   };
@@ -97,7 +100,7 @@ const Inventory: React.FC = () => {
       handleCloseModal();
     } catch (error) {
       console.error("Operation failed", error);
-      alert('Operation failed. Please try again.');
+      DialogService.error('Operation failed. Please try again.');
     }
   };
 
@@ -194,11 +197,18 @@ const Inventory: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-4">
-                      <span className={`font-mono ${item.stock === 0 ? 'text-red-400' : 'text-slate-300'}`}>
-                        {item.stock}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono ${item.stock === 0 ? 'text-red-400' : item.stock <= 5 ? 'text-amber-400' : 'text-slate-300'}`}>
+                          {item.stock}
+                        </span>
+                        {item.stock <= 5 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            Low
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="p-4 text-slate-300 font-mono">${item.price.toFixed(2)}</td>
+                    <td className="p-4 text-slate-300 font-mono">{formatCurrency(item.price)}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
                         ${item.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
@@ -209,6 +219,18 @@ const Inventory: React.FC = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {item.status === 'active' && item.stock > 0 && (
+                          <button 
+                            onClick={() => {
+                              // Navigate to POS with this item pre-selected
+                              window.location.hash = 'pos';
+                            }}
+                            className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                            title="Sell in POS"
+                          >
+                            <ShoppingCart size={16} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleOpenModal(item)}
                           className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
@@ -298,7 +320,7 @@ const Inventory: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase">Price ($)</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase">Price ({getCurrencySymbol()})</label>
                   <input
                     required
                     type="number"

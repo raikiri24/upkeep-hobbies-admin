@@ -104,3 +104,90 @@ export interface RegisterData {
   name: string;
   password: string;
 }
+
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  totalPurchases: number;
+  visits: number;
+  createdAt: string;
+  lastVisit?: string;
+}
+
+export type CustomerFormData = Omit<Customer, 'id' | 'totalPurchases' | 'visits' | 'createdAt' | 'lastVisit'>;
+
+export interface SaleItem {
+  itemId: string;
+  itemName: string;
+  sku: string;
+  quantity: number;
+  price: number;
+  discount?: number;
+  subtotal: number;
+}
+
+export interface Sale {
+  id: string;
+  items: SaleItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  paymentMethod: 'cash' | 'card' | 'digital';
+  paymentStatus: 'pending' | 'completed' | 'refunded' | 'failed';
+  customerId?: string;
+  customerName?: string;
+  staffId: string;
+  staffName: string;
+  timestamp: string;
+  notes?: string;
+  refundedItems?: SaleItem[];
+  refundAmount?: number;
+}
+
+export type SaleFormData = Omit<Sale, 'id' | 'timestamp' | 'staffName'>;
+
+export interface Transaction {
+  id: string;
+  saleId: string;
+  type: 'sale' | 'refund' | 'void';
+  amount: number;
+  paymentMethod: 'cash' | 'card' | 'digital';
+  status: 'pending' | 'completed' | 'failed';
+  timestamp: string;
+  staffId: string;
+  notes?: string;
+}
+
+export interface PosReport {
+  totalSales: number;
+  totalTransactions: number;
+  averageSale: number;
+  topSellingItems: Array<{
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  paymentBreakdown: {
+    cash: number;
+    card: number;
+    digital: number;
+  };
+  salesByHour: Array<{
+    hour: number;
+    sales: number;
+    revenue: number;
+  }>;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface CartItem {
+  item: Item;
+  quantity: number;
+  discount?: number;
+}

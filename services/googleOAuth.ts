@@ -1,21 +1,23 @@
 // Google OAuth configuration using new Google Identity Services (GIS)
 export const GOOGLE_CONFIG = {
-  clientId: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '',
-  scope: 'email profile',
+  clientId: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || "",
+  scope: "email profile",
   redirectUri: window.location.origin,
 };
 
 // API Configuration
 export const API_CONFIG = {
-  baseUrl: (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  baseUrl:
+    (import.meta as any).env?.VITE_API_BASE_URL ||
+    "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging",
   timeout: 10000,
 };
 
 // Application Configuration
 export const APP_CONFIG = {
-  name: (import.meta as any).env?.VITE_APP_NAME || 'UPKEEP HOBBIES ADMIN',
-  version: (import.meta as any).env?.VITE_APP_VERSION || '1.0.0',
-  environment: (import.meta as any).env?.MODE || 'development',
+  name: (import.meta as any).env?.VITE_APP_NAME || "UPKEEP HOBBIES ADMIN",
+  version: (import.meta as any).env?.VITE_APP_VERSION || "1.0.0",
+  environment: (import.meta as any).env?.MODE || "development",
 };
 
 // Google OAuth helper functions using new Google Identity Services
@@ -37,7 +39,7 @@ export class GoogleOAuthService {
     try {
       // Load Google Identity Services
       await this.loadGoogleIdentityServices();
-      
+
       // Initialize Google Identity Services
       this.google.accounts.id.initialize({
         client_id: GOOGLE_CONFIG.clientId,
@@ -48,7 +50,7 @@ export class GoogleOAuthService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize Google Identity Services:', error);
+      console.error("Failed to initialize Google Identity Services:", error);
       throw error;
     }
   }
@@ -61,8 +63,8 @@ export class GoogleOAuthService {
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
       script.async = true;
       script.defer = true;
       script.onload = () => {
@@ -77,7 +79,7 @@ export class GoogleOAuthService {
   private handleCredentialResponse(response: any): void {
     // This callback is used for the automatic flow
     // For manual flow, we'll use the popup method
-    console.log('Google credential response:', response);
+    console.log("Google credential response:", response);
   }
 
   async signIn(): Promise<any> {
@@ -88,52 +90,61 @@ export class GoogleOAuthService {
     try {
       // Use the new Google Identity Services popup method
       return new Promise((resolve, reject) => {
-        this.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CONFIG.clientId,
-          scope: GOOGLE_CONFIG.scope,
-          callback: (response: any) => {
-            if (response.access_token) {
-              // Get user info using the access token
-              this.fetchUserInfo(response.access_token)
-                .then(userInfo => {
-                  resolve({
-                    ...userInfo,
-                    token: response.access_token,
-                    expires_at: Date.now() + (response.expires_in * 1000),
-                  });
-                })
-                .catch(reject);
-            } else if (response.error) {
-              reject(new Error(response.error_description || response.error));
-            } else {
-              reject(new Error('Failed to obtain access token'));
-            }
-          },
-          error_callback: (error: any) => {
-            reject(new Error(error.error_description || error.error || 'OAuth flow failed'));
-          },
-        }).requestAccessToken();
+        this.google.accounts.oauth2
+          .initTokenClient({
+            client_id: GOOGLE_CONFIG.clientId,
+            scope: GOOGLE_CONFIG.scope,
+            callback: (response: any) => {
+              if (response.access_token) {
+                // Get user info using the access token
+                this.fetchUserInfo(response.access_token)
+                  .then((userInfo) => {
+                    resolve({
+                      ...userInfo,
+                      token: response.access_token,
+                      expires_at: Date.now() + response.expires_in * 1000,
+                    });
+                  })
+                  .catch(reject);
+              } else if (response.error) {
+                reject(new Error(response.error_description || response.error));
+              } else {
+                reject(new Error("Failed to obtain access token"));
+              }
+            },
+            error_callback: (error: any) => {
+              reject(
+                new Error(
+                  error.error_description || error.error || "OAuth flow failed"
+                )
+              );
+            },
+          })
+          .requestAccessToken();
       });
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error("Google sign-in error:", error);
       throw error;
     }
   }
 
   private async fetchUserInfo(accessToken: string): Promise<any> {
     try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      const response = await fetch(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user info');
+        throw new Error("Failed to fetch user info");
       }
 
       const userInfo = await response.json();
-      
+
       return {
         id: userInfo.id,
         email: userInfo.email,
@@ -144,7 +155,7 @@ export class GoogleOAuthService {
         verified_email: userInfo.verified_email,
       };
     } catch (error) {
-      console.error('Error fetching user info:', error);
+      console.error("Error fetching user info:", error);
       throw error;
     }
   }
@@ -159,7 +170,7 @@ export class GoogleOAuthService {
         ACCESS_TOKEN = null;
       }
     } catch (error) {
-      console.error('Google sign-out error:', error);
+      console.error("Google sign-out error:", error);
       // Don't throw error for sign-out failures
     }
   }

@@ -168,6 +168,7 @@ const Users: React.FC = () => {
         
         console.log("Player with ID:", playerWithId);
         
+        // Update the players list with the updated player
         setPlayers((prevPlayers) =>
           prevPlayers.map((p) =>
             p.id === selectedPlayer.id ? playerWithId : p
@@ -175,6 +176,9 @@ const Users: React.FC = () => {
         );
         setSelectedPlayer(playerWithId);
         setSuccessMessage("Player updated successfully!");
+        
+        // Refetch players to ensure the list is up to date
+        await fetchPlayers();
       }
     } catch (err) {
       console.error("Operation failed:", err);
@@ -220,7 +224,7 @@ const Users: React.FC = () => {
           <ul className="space-y-2 max-h-[70vh] overflow-y-auto">
             {players.map((player) => (
               <li
-                key={player._id}
+                key={player.id}
                 className={`cursor-pointer p-3 rounded-md transition-all ${
                   selectedPlayer?.id === player.id
                     ? "bg-blue-50 border-blue-500 border-l-4 shadow-sm"

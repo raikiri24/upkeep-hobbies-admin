@@ -1,164 +1,76 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Inventory from './components/Inventory';
 import Dashboard from './components/Dashboard';
 import Newsletter from './components/Newsletter';
-import Users from './components/Users'; // Import the new Users component
-import Tournaments from './components/Tournaments'; // Import the new Tournaments component
-import Login from './components/Login'; // Import the Login component
-import { ProtectedRoute } from './components/ProtectedRoute'; // Import ProtectedRoute
-import { LayoutDashboard, Package, Settings, Menu, Mail, Users as UsersIcon, Trophy, LogOut } from 'lucide-react'; // Import Trophy icon
+import Users from './components/Users';
+import Tournaments from './components/Tournaments';
+import PosTerminal from './components/PosTerminal';
+import SalesManagement from './components/SalesManagement';
+import Login from './components/Login';
+import NotFound from './components/NotFound';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import Layout from './components/Layout';
 import { useAuth } from './contexts/AuthContext';
 
-type View = 'dashboard' | 'inventory' | 'newsletter' | 'users' | 'tournaments'; // Add 'tournaments' to the View type
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated } = useAuth();
 
-const App: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<View>(() => {
-    const savedView = localStorage.getItem('currentView');
-    return (savedView as View) || 'dashboard';
-  });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Login onLogin={() => {}} />;
   }
 
-  const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => {
-    const { hasPermission } = useAuth();
-    
-    // Check if user has permission to view this item
-    const permissionMap: Record<View, string> = {
-      dashboard: 'dashboard.view',
-      inventory: 'inventory.view',
-      newsletter: 'newsletter.view',
-      users: 'users.view',
-      tournaments: 'tournaments.view'
-    };
-    
-    const requiredPermission = permissionMap[view];
-    if (!hasPermission(requiredPermission)) {
-      return null;
-    }
-    
-    return (
-      <button
-        onClick={() => {
-          setCurrentView(view);
-          localStorage.setItem('currentView', view);
-          setIsSidebarOpen(false);
-        }}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-          currentView === view
-            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800'
-        }`}
-      >
-        <Icon size={20} />
-        <span>{label}</span>
-      </button>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex overflow-hidden">
-      
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+    <Layout>
+      <Routes>
+        <Route path="/dashboard" element={
+          <ProtectedRoute requiredPermission="dashboard.view">
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory" element={
+          <ProtectedRoute requiredPermission="inventory.view">
+            <Inventory />
+          </ProtectedRoute>
+        } />
+        <Route path="/newsletter" element={
+          <ProtectedRoute requiredPermission="newsletter.view">
+            <Newsletter />
+          </ProtectedRoute>
+        } />
+        <Route path="/users" element={
+          <ProtectedRoute requiredPermission="users.view">
+            <Users />
+          </ProtectedRoute>
+        } />
+        <Route path="/tournaments" element={
+          <ProtectedRoute requiredPermission="tournaments.view">
+            <Tournaments />
+          </ProtectedRoute>
+        } />
+        <Route path="/pos" element={
+          <ProtectedRoute requiredPermission="pos.view">
+            <PosTerminal />
+          </ProtectedRoute>
+        } />
+        <Route path="/sales" element={
+          <ProtectedRoute requiredPermission="sales.view">
+            <SalesManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </Layout>
+  );
+};
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="h-full flex flex-col p-6">
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold font-display text-white">
-              UH
-            </div>
-            <h1 className="font-display font-bold text-xl tracking-wide text-white">UPKEEP<span className="text-indigo-500">ADMIN</span></h1>
-          </div>
-
-          <nav className="flex-1 space-y-2">
-            <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
-            <NavItem view="inventory" icon={Package} label="Inventory" />
-            <NavItem view="newsletter" icon={Mail} label="Newsletter" />
-            <NavItem view="users" icon={UsersIcon} label="Users" />
-            <NavItem view="tournaments" icon={Trophy} label="Tournaments" />
-          </nav>
-
-          <div className="pt-6 border-t border-slate-800 space-y-2">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all font-medium">
-              <Settings size={20} />
-              <span>Settings</span>
-            </button>
-            
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur flex items-center justify-between px-6 lg:px-10 shrink-0 z-30">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-2 text-slate-400 hover:text-white"
-          >
-            <Menu size={24} />
-          </button>
-          
-          <div className="ml-auto flex items-center gap-4">
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-bold text-white">{user?.name || 'User'}</span>
-              <span className="text-xs text-slate-500 capitalize">{user?.role || 'User'}</span>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-500 font-bold">
-              {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-            </div>
-            <button
-              onClick={logout}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
-              title="Logout"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </header>
-
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
-          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <ProtectedRoute requiredPermission="dashboard.view">
-              {currentView === 'dashboard' && <Dashboard />}
-            </ProtectedRoute>
-            
-            <ProtectedRoute requiredPermission="inventory.view">
-              {currentView === 'inventory' && <Inventory />}
-            </ProtectedRoute>
-            
-            <ProtectedRoute requiredPermission="newsletter.view">
-              {currentView === 'newsletter' && <Newsletter />}
-            </ProtectedRoute>
-            
-            <ProtectedRoute requiredPermission="users.view">
-              {currentView === 'users' && <Users />}
-            </ProtectedRoute>
-            
-            <ProtectedRoute requiredPermission="tournaments.view">
-              {currentView === 'tournaments' && <Tournaments />}
-            </ProtectedRoute>
-          </div>
-        </div>
-      </main>
-
-    </div>
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 };
 

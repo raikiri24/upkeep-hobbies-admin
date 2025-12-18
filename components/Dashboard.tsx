@@ -1,6 +1,8 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { TrendingUp, Users, DollarSign, Package } from 'lucide-react';
+import RecentSales from './RecentSales';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 const salesData = [
   { name: 'Mon', sales: 4000, orders: 24 },
@@ -22,7 +24,7 @@ const categoryData = [
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; trend: string; isPositive: boolean }> = ({ title, value, icon, trend, isPositive }) => (
   <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
     <div className="absolute right-0 top-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-      {React.cloneElement(icon as React.ReactElement, { size: 64 })}
+      <span className="text-6xl opacity-20">{icon}</span>
     </div>
     <div className="flex items-center gap-4 mb-4">
       <div className="p-3 bg-slate-800 rounded-lg text-indigo-400 border border-slate-700 group-hover:text-indigo-300 group-hover:border-indigo-500/30 transition-colors">
@@ -48,7 +50,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Revenue" 
-          value="$12,450.00" 
+          value="₱12,450.00" 
           icon={<DollarSign />} 
           trend="+12.5%" 
           isPositive={true} 
@@ -69,12 +71,15 @@ const Dashboard: React.FC = () => {
         />
         <StatCard 
           title="Avg. Order Value" 
-          value="$85.20" 
+          value="₱85.20" 
           icon={<TrendingUp />} 
           trend="-1.1%" 
           isPositive={false} 
         />
       </div>
+
+      {/* Recent Sales Widget */}
+      <RecentSales />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -103,7 +108,7 @@ const Dashboard: React.FC = () => {
                   tick={{fill: '#64748b'}} 
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(value) => `${getCurrencySymbol()}${value}`}
                 />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}

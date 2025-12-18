@@ -1,0 +1,51 @@
+// Export utilities for sales management
+export const exportSalesToCSV = async (sales: any[], filename: string = 'sales_export') => {
+  try {
+    // Generate CSV content
+    const headers = [
+      'Sale ID',
+      'Date/Time',
+      'Customer',
+      'Staff Member',
+      'Items Count',
+      'Subtotal',
+      'Tax',
+      'Total',
+      'Payment Method',
+      'Payment Status'
+    ];
+
+    const rows = sales.map((sale: any) => [
+      sale.id,
+      new Date(sale.timestamp).toLocaleString(),
+      sale.customerName || 'Guest',
+      sale.staffName,
+      sale.items.length.toString(),
+      sale.subtotal.toFixed(2),
+      sale.tax.toFixed(2),
+      sale.total.toFixed(2),
+      sale.paymentMethod,
+      sale.paymentStatus
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    // Download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to export:', error);
+    return false;
+  }
+};

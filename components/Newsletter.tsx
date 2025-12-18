@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { Item } from '../types';
 import { Mail, Send, CheckCircle2, Loader2, ImageIcon, Sparkles } from 'lucide-react';
+import { DialogService } from '../services/dialogService';
+import { formatCurrencySimple } from '../utils/currency';
 
 const Newsletter: React.FC = () => {
   const [recentItems, setRecentItems] = useState<Item[]>([]);
@@ -45,7 +47,7 @@ const Newsletter: React.FC = () => {
         setMessage('');
       }, 3000);
     } catch (e) {
-      alert("Failed to send newsletter");
+      DialogService.error("Failed to send newsletter");
     } finally {
       setIsSending(false);
     }
@@ -92,7 +94,7 @@ const Newsletter: React.FC = () => {
                 <div className="min-w-0">
                   <h4 className="text-slate-200 font-medium text-sm truncate group-hover:text-indigo-400 transition-colors">{item.name}</h4>
                   <p className="text-slate-500 text-xs mt-1">{item.category}</p>
-                  <p className="text-emerald-400 text-xs font-mono mt-1">${item.price.toFixed(2)}</p>
+                  <p className="text-emerald-400 text-xs font-mono mt-1">{formatCurrencySimple(item.price)}</p>
                 </div>
               </div>
             ))}

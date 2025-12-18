@@ -49,6 +49,25 @@ export const PERMISSIONS: Permission[] = [
   { id: 'newsletter.create', name: 'Create Newsletter', description: 'Create newsletter campaigns', resource: 'newsletter', action: 'create' },
   { id: 'newsletter.send', name: 'Send Newsletter', description: 'Send newsletter campaigns', resource: 'newsletter', action: 'send' },
   
+  // Point of Sale permissions
+  { id: 'pos.view', name: 'View POS', description: 'Access point of sale terminal', resource: 'pos', action: 'view' },
+  { id: 'pos.create', name: 'Create Sales', description: 'Create new sales transactions', resource: 'pos', action: 'create' },
+  { id: 'pos.refund', name: 'Process Refunds', description: 'Process refunds and returns', resource: 'pos', action: 'refund' },
+  { id: 'pos.reports', name: 'View POS Reports', description: 'Access sales reports and analytics', resource: 'pos', action: 'reports' },
+  { id: 'pos.void', name: 'Void Transactions', description: 'Void transactions', resource: 'pos', action: 'void' },
+  
+  // Customer permissions
+  { id: 'customers.view', name: 'View Customers', description: 'View customer information', resource: 'customers', action: 'view' },
+  { id: 'customers.create', name: 'Create Customers', description: 'Add new customers', resource: 'customers', action: 'create' },
+  { id: 'customers.edit', name: 'Edit Customers', description: 'Edit customer information', resource: 'customers', action: 'edit' },
+  { id: 'customers.delete', name: 'Delete Customers', description: 'Delete customer records', resource: 'customers', action: 'delete' },
+  
+  // Sales Management permissions
+  { id: 'sales.view', name: 'View Sales', description: 'View sales transactions and history', resource: 'sales', action: 'view' },
+  { id: 'sales.refund', name: 'Process Refunds', description: 'Process refunds and returns for sales', resource: 'sales', action: 'refund' },
+  { id: 'sales.void', name: 'Void Sales', description: 'Void sales transactions', resource: 'sales', action: 'void' },
+  { id: 'sales.export', name: 'Export Sales', description: 'Export sales data and reports', resource: 'sales', action: 'export' },
+  
   // System permissions
   { id: 'system.settings', name: 'System Settings', description: 'Access system settings', resource: 'system', action: 'settings' },
   { id: 'system.logs', name: 'View Logs', description: 'Access system logs', resource: 'system', action: 'logs' },
@@ -73,6 +92,9 @@ export const ROLES: Role[] = [
       'users.view', 'users.create', 'users.edit',
       'tournaments.view', 'tournaments.create', 'tournaments.edit', 'tournaments.delete', 'tournaments.manage_participants',
       'newsletter.view', 'newsletter.create', 'newsletter.send',
+      'pos.view', 'pos.create', 'pos.refund', 'pos.reports', 'pos.void',
+      'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
+      'sales.view', 'sales.refund', 'sales.void', 'sales.export',
       'system.settings'
     ],
     level: 80
@@ -86,7 +108,10 @@ export const ROLES: Role[] = [
       'inventory.view', 'inventory.create', 'inventory.edit',
       'users.view',
       'tournaments.view', 'tournaments.create', 'tournaments.edit', 'tournaments.manage_participants',
-      'newsletter.view', 'newsletter.create', 'newsletter.send'
+      'newsletter.view', 'newsletter.create', 'newsletter.send',
+      'pos.view', 'pos.create', 'pos.refund', 'pos.reports',
+      'customers.view', 'customers.create', 'customers.edit',
+      'sales.view', 'sales.refund', 'sales.export'
     ],
     level: 60
   },
@@ -98,7 +123,10 @@ export const ROLES: Role[] = [
       'dashboard.view',
       'inventory.view', 'inventory.create', 'inventory.edit',
       'tournaments.view', 'tournaments.create', 'tournaments.edit',
-      'newsletter.view', 'newsletter.create'
+      'newsletter.view', 'newsletter.create',
+      'pos.view', 'pos.create',
+      'customers.view', 'customers.create',
+      'sales.view'
     ],
     level: 40
   },
@@ -110,7 +138,10 @@ export const ROLES: Role[] = [
       'dashboard.view',
       'inventory.view',
       'tournaments.view',
-      'newsletter.view'
+      'newsletter.view',
+      'pos.view',
+      'customers.view',
+      'sales.view'
     ],
     level: 20
   }
