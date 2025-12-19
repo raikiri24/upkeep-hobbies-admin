@@ -2,34 +2,71 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Upkeep Hobbies Admin</title>
+    <title>Upkeep Hobbies Admin - 404</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script>
-      // Single Page App redirect
-      var segmentCount = 0;
-      var l = window.location;
-      l.replace(
-        l.protocol +
-          "//" +
-          l.hostname +
-          (l.port ? ":" + l.port : "") +
-          l.pathname
-            .split("/")
-            .slice(0, 1 + segmentCount)
-            .join("/") +
-          "/?p=/" +
-          l.pathname
-            .slice(1)
-            .split("/")
-            .slice(segmentCount)
-            .join("/")
-            .replace(/&/g, "~and~")
-            .replace(/=/g, "~eq~") +
-          (l.search ? "&q=" + l.search.slice(1).replace(/&/g, "~and~").replace(/=/g, "~eq~") : "") +
-          l.hash
-      );
+      // GitHub Pages SPA redirect for subdirectory
+      (function(l) {
+        if (l.search[1] === '/') {
+          return;
+        }
+        
+        // For GitHub Pages subdirectory deployment
+        var path = l.pathname.slice("/upkeep-hobbies-admin/".length) || "/";
+        var newPath = "/upkeep-hobbies-admin/#" + path;
+        
+        if (l.pathname !== newPath) {
+          l.replace(newPath);
+        }
+      })(window.location);
     </script>
+    <style>
+      body {
+        background-color: #020617;
+        color: #f8fafc;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 0.75rem;
+        max-width: 500px;
+      }
+      h1 {
+        color: white;
+        margin-bottom: 1rem;
+      }
+      p {
+        color: #94a3b8;
+        margin-bottom: 1.5rem;
+      }
+      .home-link {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        background-color: #4f46e5;
+        color: white;
+        border-radius: 0.5rem;
+        display: inline-block;
+      }
+      .home-link:hover {
+        background-color: #4338ca;
+      }
+    </style>
   </head>
   <body>
-    <p>Redirecting...</p>
+    <div class="container">
+      <h1>🚀 Upkeep Hobbies Admin</h1>
+      <p>Redirecting to the main application...</p>
+      <a href="/upkeep-hobbies-admin/" class="home-link">Go to Dashboard</a>
+    </div>
   </body>
 </html>
