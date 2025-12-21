@@ -20,6 +20,17 @@ const Tournaments: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState<boolean>(false);
+  const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
+  const [newPlayer, setNewPlayer] = useState<Partial<Player>>({
+    name: "",
+    email: "",
+    beybladeStats: {
+      spinFinishes: 0,
+      overFinishes: 0,
+      burstFinishes: 0,
+      extremeFinishes: 0,
+    }
+  });
 
   useEffect(() => {
     fetchData();
@@ -95,22 +106,60 @@ const Tournaments: React.FC = () => {
   };
 
   const handleStandingChange = (userId: string, field: 'rank' | 'score' | 'notes', value: string | number) => {
-    setFormData((prev) => ({
-      ...prev,
-      standings: prev.standings?.map(standing => 
+    // Prevent manual rank changes - rankings are calculated automatically
+    if (field === 'rank') return;
+    
+    setFormData((prev) => {
+      const updatedStandings = prev.standings?.map(standing => 
         standing.userId === userId 
-          ? { ...standing, [field]: field === 'rank' ? parseInt(value as string, 10) : value }
+          ? { ...standing, [field]: value }
           : standing
-      ) || []
-    }));
+      ) || [];
+      
+      // Automatically recalculate rankings when scores or notes change
+      if (field === 'score') {
+        return { ...prev, standings: calculateRankings(updatedStandings) };
+      }
+      
+      return { ...prev, standings: updatedStandings };
+    });
   };
 
-  const handleScoreChange = (userId: string, wins: number, losses: number, draws: number) => {
-    const score = `${wins}-${losses}-${draws}`;
+  const handleScoreChange = (userId: string, wins: number, losses: number) => {
+    const score = `${wins}-${losses}`;
     handleStandingChange(userId, 'score', score);
   };
 
-  const addMatchResult = (winnerId: string, loserId: string, isDraw: boolean = false) => {
+  const calculateRankings = (standings: any[]) => {
+    // Sort by wins first, then by fewer losses
+    return standings
+      .map(standing => {
+        const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
+        return {
+          ...standing,
+          wins,
+          losses,
+          winRate: wins + losses > 0 ? wins / (wins + losses) : 0,
+          totalGames: wins + losses
+        };
+      })
+      .sort((a, b) => {
+        // Primary: by wins (descending)
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        // Secondary: by win rate (descending)  
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+        // Tertiary: by fewer losses (ascending)
+        if (a.losses !== b.losses) return a.losses - b.losses;
+        return 0;
+      })
+      .map((standing, index) => ({
+        ...standing,
+        rank: index + 1,
+        score: `${standing.wins}-${standing.losses}`
+      }));
+  };
+
+  const addMatchResult = (winnerId: string, loserId: string) => {
     setFormData((prev) => {
       const updatedStandings = [...(prev.standings || [])];
       
@@ -118,24 +167,18 @@ const Tournaments: React.FC = () => {
       const loserStanding = updatedStandings.find(s => s.userId === loserId);
       
       if (winnerStanding && loserStanding) {
-        if (isDraw) {
-          // Handle draw
-          const [wWins, wLosses, wDraws] = (winnerStanding.score || '0-0-0').split('-').map(Number);
-          const [lWins, lLosses, lDraws] = (loserStanding.score || '0-0-0').split('-').map(Number);
-          
-          winnerStanding.score = `${wWins}-${wLosses}-${wDraws + 1}`;
-          loserStanding.score = `${lWins}-${lLosses}-${lDraws + 1}`;
-        } else {
-          // Handle win/loss
-          const [wWins, wLosses, wDraws] = (winnerStanding.score || '0-0-0').split('-').map(Number);
-          const [lWins, lLosses, lDraws] = (loserStanding.score || '0-0-0').split('-').map(Number);
-          
-          winnerStanding.score = `${wWins + 1}-${wLosses}-${wDraws}`;
-          loserStanding.score = `${lWins}-${lLosses + 1}-${lDraws}`;
-        }
+        // Handle win/loss (no more draws)
+        const [wWins, wLosses] = (winnerStanding.score || '0-0').split('-').map(Number);
+        const [lWins, lLosses] = (loserStanding.score || '0-0').split('-').map(Number);
+        
+        winnerStanding.score = `${wWins + 1}-${wLosses}`;
+        loserStanding.score = `${lWins}-${lLosses + 1}`;
       }
       
-      return { ...prev, standings: updatedStandings };
+      // Automatically re-rank all players based on new scores
+      const rankedStandings = calculateRankings(updatedStandings);
+      
+      return { ...prev, standings: rankedStandings };
     });
   };
 
@@ -149,7 +192,7 @@ const Tournaments: React.FC = () => {
           standings: [...(prev.standings || []), {
             userId,
             rank: (prev.standings?.length || 0) + 1,
-            score: "0-0-0",
+            score: "0-0",
             notes: ""
           }]
         }));
@@ -170,7 +213,7 @@ const Tournaments: React.FC = () => {
       return existingStanding || {
         userId,
         rank: index + 1,
-        score: "0-0-0",
+        score: "0-0",
         notes: ""
       };
     });
@@ -190,8 +233,17 @@ const Tournaments: React.FC = () => {
     setSuccessMessage(null);
     
     try {
+      // Calculate final rankings before saving
+      const rankedStandings = formData.standings ? calculateRankings(formData.standings) : [];
+      const tournamentData = {
+        ...formData,
+        standings: rankedStandings
+      };
+      
+      console.log("Saving tournament with ranked standings:", tournamentData);
+      
       if (isAddingNew) {
-        const newTournament = await apiService.createTournament(formData);
+        const newTournament = await apiService.createTournament(tournamentData);
         setTournaments((prev) => [...prev, newTournament]);
         setSelectedTournament(newTournament);
         setIsAddingNew(false);
@@ -201,7 +253,7 @@ const Tournaments: React.FC = () => {
         
         const updatedTournament = await apiService.updateTournament(
           selectedTournament._id,
-          formData
+          tournamentData
         );
         
         setTournaments((prev) =>
@@ -233,6 +285,56 @@ const Tournaments: React.FC = () => {
       setSuccessMessage("Tournament deleted successfully!");
     } catch (err) {
       setError("Failed to delete tournament.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddPlayer = async () => {
+    if (!newPlayer.name || !newPlayer.email) {
+      setError("Player name and email are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log("Creating player with data:", newPlayer);
+      const createdPlayer = await apiService.createPlayer(newPlayer);
+      console.log("Created player response:", createdPlayer);
+      
+      // Try to refetch players list first
+      try {
+        const updatedPlayers = await apiService.getPlayers();
+        console.log("Refetched players list:", updatedPlayers);
+        setPlayers(updatedPlayers);
+      } catch (fetchErr) {
+        console.log("Failed to refetch players, using created player:", fetchErr);
+        // Fallback: add the created player to local state
+        setPlayers((prev) => {
+          const updated = [...prev, createdPlayer];
+          console.log("Updated players list locally:", updated);
+          return updated;
+        });
+      }
+      
+      // Reset form
+      setNewPlayer({
+        name: "",
+        email: "",
+        beybladeStats: {
+          spinFinishes: 0,
+          overFinishes: 0,
+          burstFinishes: 0,
+          extremeFinishes: 0,
+        }
+      });
+      setShowAddPlayer(false);
+      setSuccessMessage("Player added successfully!");
+    } catch (err) {
+      setError("Failed to add player.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -414,9 +516,77 @@ const Tournaments: React.FC = () => {
 
                 {/* Participants */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 border-b pb-2">
-                    Participants ({formData.participants.length}/{formData.maxPlayers})
-                  </h3>
+                  <div className="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Participants ({formData.participants.length}/{formData.maxPlayers})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPlayer(!showAddPlayer)}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      + Quick Add Player
+                    </button>
+                  </div>
+                  
+                  {/* Quick Add Player Form */}
+                  {showAddPlayer && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                      <h4 className="text-sm font-medium text-blue-900 mb-3">Add New Player</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={newPlayer.name || ""}
+                            onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+                            className="w-full text-sm text-black border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Player name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                          <input
+                            type="email"
+                            value={newPlayer.email || ""}
+                            onChange={(e) => setNewPlayer({ ...newPlayer, email: e.target.value })}
+                            className="w-full text-sm text-black border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="player@email.com"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddPlayer(false);
+                            setNewPlayer({
+                              name: "",
+                              email: "",
+                              beybladeStats: {
+                                spinFinishes: 0,
+                                overFinishes: 0,
+                                burstFinishes: 0,
+                                extremeFinishes: 0,
+                              }
+                            });
+                          }}
+                          className="px-3 py-1 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddPlayer}
+                          disabled={loading || !newPlayer.name || !newPlayer.email}
+                          className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                        >
+                          Add Player
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                     {players.map((player) => (
                       <label
@@ -484,29 +654,14 @@ const Tournaments: React.FC = () => {
                               const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
                               const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
                               if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
-                                addMatchResult(winnerSelect.value, loserSelect.value, false);
+                                addMatchResult(winnerSelect.value, loserSelect.value);
                                 winnerSelect.value = '';
                                 loserSelect.value = '';
                               }
                             }}
                             className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
                           >
-                            Log Win
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
-                              const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
-                              if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
-                                addMatchResult(winnerSelect.value, loserSelect.value, true);
-                                winnerSelect.value = '';
-                                loserSelect.value = '';
-                              }
-                            }}
-                            className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-md hover:bg-yellow-700 transition-colors"
-                          >
-                            Log Draw
+                            Log Match
                           </button>
                         </div>
                       </div>
@@ -537,10 +692,10 @@ const Tournaments: React.FC = () => {
                       <table className="min-w-full border border-gray-200 rounded-md">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Automatically calculated based on score">Rank*</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">W-L-D</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">W-L</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           </tr>
@@ -550,16 +705,18 @@ const Tournaments: React.FC = () => {
                             .sort((a, b) => a.rank - b.rank)
                             .map((standing) => {
                             const player = players.find(p => p.id === standing.userId);
-                            const [wins, losses, draws] = (standing.score || '0-0-0').split('-').map(Number);
+                            const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
+                            const draws = 0; // Remove draws
                             return (
                               <tr key={standing.userId} className="hover:bg-gray-50">
                                 <td className="px-4 py-2 whitespace-nowrap">
                                   <input
                                     type="number"
                                     value={standing.rank}
-                                    onChange={(e) => handleStandingChange(standing.userId, 'rank', e.target.value)}
-                                    className="w-16 text-black border border-gray-300 rounded p-1 text-sm font-medium"
+                                    disabled
+                                    className="w-16 text-black border border-gray-300 rounded p-1 text-sm font-medium bg-gray-100"
                                     min="1"
+                                    title="Rank is automatically calculated based on score"
                                   />
                                 </td>
                                 <td className="px-4 py-2 whitespace-nowrap">
@@ -578,8 +735,6 @@ const Tournaments: React.FC = () => {
                                       <span className="text-green-600 font-bold text-sm">{wins}</span>
                                       <span className="text-gray-400 mx-1">-</span>
                                       <span className="text-red-600 font-bold text-sm">{losses}</span>
-                                      <span className="text-gray-400 mx-1">-</span>
-                                      <span className="text-yellow-600 font-bold text-sm">{draws}</span>
                                     </div>
                                   </div>
                                 </td>
@@ -589,7 +744,7 @@ const Tournaments: React.FC = () => {
                                       type="button"
                                       onClick={() => {
                                         const newWins = Math.max(0, wins - 1);
-                                        handleScoreChange(standing.userId, newWins, losses, draws);
+                                        handleScoreChange(standing.userId, newWins, losses);
                                       }}
                                       className="w-6 h-6 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
                                     >
@@ -599,7 +754,7 @@ const Tournaments: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        handleScoreChange(standing.userId, wins + 1, losses, draws);
+                                        handleScoreChange(standing.userId, wins + 1, losses);
                                       }}
                                       className="w-6 h-6 bg-green-100 text-green-600 rounded hover:bg-green-200 text-xs font-bold"
                                     >
@@ -612,7 +767,7 @@ const Tournaments: React.FC = () => {
                                       type="button"
                                       onClick={() => {
                                         const newLosses = Math.max(0, losses - 1);
-                                        handleScoreChange(standing.userId, wins, newLosses, draws);
+                                        handleScoreChange(standing.userId, wins, newLosses);
                                       }}
                                       className="w-6 h-6 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
                                     >
@@ -622,30 +777,7 @@ const Tournaments: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        handleScoreChange(standing.userId, wins, losses + 1, draws);
-                                      }}
-                                      className="w-6 h-6 bg-green-100 text-green-600 rounded hover:bg-green-200 text-xs font-bold"
-                                    >
-                                      +
-                                    </button>
-                                    
-                                    <span className="mx-2 text-gray-400">|</span>
-                                    
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newDraws = Math.max(0, draws - 1);
-                                        handleScoreChange(standing.userId, wins, losses, newDraws);
-                                      }}
-                                      className="w-6 h-6 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
-                                    >
-                                      -
-                                    </button>
-                                    <span className="w-8 text-center text-sm font-medium">{draws}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleScoreChange(standing.userId, wins, losses, draws + 1);
+                                        handleScoreChange(standing.userId, wins, losses + 1);
                                       }}
                                       className="w-6 h-6 bg-green-100 text-green-600 rounded hover:bg-green-200 text-xs font-bold"
                                     >
@@ -681,6 +813,15 @@ const Tournaments: React.FC = () => {
                     <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-md">
                       <p className="text-sm">No standings added yet</p>
                       <p className="text-xs mt-1">Add participants and click "Generate from Participants" or add standings manually</p>
+                    </div>
+                  )}
+                  
+                  {/* Note about automatic rankings */}
+                  {formData.standings && formData.standings.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-xs text-blue-700">
+                        <span className="font-medium">Note:</span> Rankings are automatically calculated based on player scores (primary: wins, secondary: win rate, tertiary: fewest losses). Rankings with * are calculated dynamically and included in the saved tournament data.
+                      </p>
                     </div>
                   )}
                 </div>

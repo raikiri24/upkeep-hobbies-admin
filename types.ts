@@ -146,7 +146,7 @@ export interface Sale {
   refundAmount?: number;
 }
 
-export type SaleFormData = Omit<Sale, 'id' | 'timestamp' | 'staffName'>;
+export type SaleFormData = Omit<Sale, 'id' | 'timestamp' | 'staffName' | 'paymentStatus'>;
 
 export interface Transaction {
   id: string;

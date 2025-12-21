@@ -3,9 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    background-color: #020617; /* Slate 950 */
-    color: #f8fafc; /* Slate 50 */
+  html, body {
+    @apply bg-slate-950 text-slate-100;
   }
   
   /* Custom scrollbar for that cyber/tech feel */
@@ -14,13 +13,83 @@
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #0f172a;
+    @apply bg-slate-900;
   }
   ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 4px;
+    @apply bg-slate-700 rounded;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    @apply bg-slate-600;
+  }
+  
+  /* Font display optimization */
+  * {
+    font-display: swap;
+  }
+  
+  /* Selection colors */
+  ::selection {
+    @apply bg-indigo-600 text-white;
+  }
+  
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+@layer components {
+  /* Button base styles */
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium py-2 px-4 rounded-lg border border-slate-700 transition-colors duration-200;
+  }
+  
+  /* Card styles */
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-lg;
+  }
+  
+  .card-hover {
+    @apply hover:border-indigo-500/50 hover:shadow-indigo-500/10 transition-all duration-200;
+  }
+  
+  /* Input styles */
+  .input-field {
+    @apply bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200;
+  }
+  
+  /* Loading animation */
+  .loading-dots {
+    @apply flex gap-1;
+  }
+  
+  .loading-dots > div {
+    @apply w-2 h-2 bg-indigo-500 rounded-full animate-bounce;
+  }
+  
+  .loading-dots > div:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  
+  .loading-dots > div:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent;
+  }
+  
+  .glass {
+    @apply bg-slate-900/50 backdrop-blur-sm border border-slate-800/50;
+  }
+  
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.3), 0 0 40px rgba(79, 70, 229, 0.1);
   }
 }

@@ -95,12 +95,10 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
     );
   };
 
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.08; // 8% tax rate
-  };
+
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
+    return calculateSubtotal();
   };
 
   const completeSale = async (paymentMethod: 'cash' | 'card' | 'digital') => {
@@ -119,10 +117,9 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
           subtotal: cartItem.item.price * cartItem.quantity * (1 - (cartItem.discount || 0) / 100),
         })),
         subtotal: calculateSubtotal(),
-        tax: calculateTax(),
+        tax: 0,
         total: calculateTotal(),
         paymentMethod,
-        paymentStatus: 'pending',
         customerId: selectedCustomer?.id,
         customerName: selectedCustomer?.name,
         staffId: user.id,
@@ -277,7 +274,7 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
               onUpdateQuantity={updateCartItemQuantity}
               onRemoveItem={removeFromCart}
               subtotal={calculateSubtotal()}
-              tax={calculateTax()}
+              tax={0}
               total={calculateTotal()}
               onCheckout={() => setShowPayment(true)}
               disabled={cart.length === 0}

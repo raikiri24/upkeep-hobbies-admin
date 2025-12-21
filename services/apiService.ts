@@ -20,7 +20,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { API_CONFIG } from "./googleOAuth";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const MOCK_DELAY = 600;
 
 // --- Mock Data ---
@@ -81,7 +81,8 @@ let mockSales: Sale[] = [
 
 // --- ApiService ---
 class ApiService {
-  private baseUrl = API_CONFIG.baseUrl;
+  private baseUrl =
+    "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging";
 
   private async simulateDelay() {
     return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
@@ -124,14 +125,13 @@ class ApiService {
   }
 
   async createItem(itemData: ItemFormData): Promise<Item> {
-    const newItem: Item = {
-      ...itemData,
-      id: uuidv4(),
-      lastUpdated: new Date().toISOString(),
-    };
-
     if (USE_MOCK) {
       await this.simulateDelay();
+      const newItem: Item = {
+        ...itemData,
+        id: uuidv4(),
+        lastUpdated: new Date().toISOString(),
+      };
       const nextKey = (
         Math.max(...Object.keys(mockItems).map(Number), -1) + 1
       ).toString();
@@ -139,10 +139,10 @@ class ApiService {
       return newItem;
     }
 
-    const response = await fetch(`${this.baseUrl}/createItems`, {
+    const response = await fetch(`${this.baseUrl}/createItem`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newItem),
+      body: JSON.stringify(itemData),
     });
     return await response.json();
   }
@@ -199,16 +199,15 @@ class ApiService {
   }
 
   async createCustomer(customerData: CustomerFormData): Promise<Customer> {
-    const newCustomer: Customer = {
-      ...customerData,
-      id: uuidv4(),
-      totalPurchases: 0,
-      visits: 0,
-      createdAt: new Date().toISOString(),
-    };
-
     if (USE_MOCK) {
       await this.simulateDelay();
+      const newCustomer: Customer = {
+        ...customerData,
+        id: uuidv4(),
+        totalPurchases: 0,
+        visits: 0,
+        createdAt: new Date().toISOString(),
+      };
       mockCustomers.push(newCustomer);
       return newCustomer;
     }
@@ -216,7 +215,7 @@ class ApiService {
     const response = await fetch(`${this.baseUrl}/customers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCustomer),
+      body: JSON.stringify(customerData),
     });
     return await response.json();
   }
@@ -235,16 +234,15 @@ class ApiService {
   }
 
   async createSale(saleData: SaleFormData, staffName: string): Promise<Sale> {
-    const newSale: Sale = {
-      ...saleData,
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      staffName,
-      paymentStatus: "completed",
-    };
-
     if (USE_MOCK) {
       await this.simulateDelay();
+      const newSale: Sale = {
+        ...saleData,
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        staffName,
+        paymentStatus: "completed",
+      };
       mockSales.push(newSale);
       return newSale;
     }
@@ -252,7 +250,7 @@ class ApiService {
     const response = await fetch(`${this.baseUrl}/sales`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newSale),
+      body: JSON.stringify({ ...saleData, staffName, paymentStatus: 'completed' }),
     });
     return await response.json();
   }
@@ -314,12 +312,211 @@ class ApiService {
       };
     }
 
-    return {
-      sales: mockSales,
-      total: mockSales.length,
-      page: 1,
-      totalPages: 1,
-    };
+    const queryParams = new URLSearchParams();
+    if (params?.query) queryParams.append("query", params.query);
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+    if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+
+    const response = await fetch(`${this.baseUrl}/sales/search?${queryParams}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  }
+
+  // --- Players ---
+  async getPlayers(): Promise<Player[]> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      return [
+        {
+          id: "player-001",
+          name: "John Player",
+          email: "john.player@email.com",
+          avatar:
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop",
+          beybladeStats: {
+            spinFinishes: 5,
+            overFinishes: 3,
+            burstFinishes: 2,
+            extremeFinishes: 1,
+          },
+        },
+        {
+          id: "player-002",
+          name: "Jane Player",
+          email: "jane.player@email.com",
+          avatar:
+            "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&auto=format&fit=crop",
+          beybladeStats: {
+            spinFinishes: 8,
+            overFinishes: 4,
+            burstFinishes: 3,
+            extremeFinishes: 2,
+          },
+        },
+      ];
+    }
+
+    const response = await fetch(`${this.baseUrl}/getPlayers`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const data = await response.json();
+    return this.normalizeResponse<Player>(data);
+  }
+
+  // --- Tournaments ---
+  async getTournaments(): Promise<Tournament[]> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      return [
+        {
+          _id: "tournament-001",
+          name: "Beyblade X Championship",
+          date: new Date("2024-01-15T10:00:00Z"),
+          game: "Beyblade X",
+          season: 1,
+          status: "Completed",
+          participants: ["player-001", "player-002"],
+          maxPlayers: 20,
+          standings: [
+            {
+              userId: "player-001",
+              rank: 1,
+              score: "95",
+              notes: "Champion",
+            },
+            {
+              userId: "player-002",
+              rank: 2,
+              score: "87",
+              notes: "Runner-up",
+            },
+          ],
+        },
+      ];
+    }
+
+    const response = await fetch(`${this.baseUrl}/getGasgasan`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const data = await response.json();
+    return this.normalizeResponse<Tournament>(data);
+  }
+
+  async createTournament(
+    tournamentData: TournamentFormData
+  ): Promise<Tournament> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const newTournament: Tournament = {
+        ...tournamentData,
+        _id: uuidv4(),
+      };
+      return newTournament;
+    }
+
+    const response = await fetch(`${this.baseUrl}/gasgasanCreate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tournamentData),
+    });
+    return await response.json();
+  }
+
+  async updateTournament(
+    id: string,
+    updates: Partial<Tournament>
+  ): Promise<Tournament> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const updatedTournament: Tournament = {
+        _id: id,
+        name: updates.name || "Updated Tournament",
+        date: updates.date || new Date(),
+        game: updates.game || "Beyblade X",
+        season: updates.season || 1,
+        status: updates.status || "Scheduled",
+        participants: updates.participants || [],
+        maxPlayers: updates.maxPlayers || 20,
+        standings: updates.standings || [],
+      };
+      return updatedTournament;
+    }
+
+    const response = await fetch(`${this.baseUrl}/tournaments/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    });
+    return await response.json();
+  }
+
+  async createPlayer(playerData: Partial<Player>): Promise<Player> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const newPlayer: Player = {
+        id: uuidv4(),
+        name: playerData.name || "New Player",
+        email: playerData.email || "player@email.com",
+        avatar:
+          playerData.avatar ||
+          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop",
+        beybladeStats: playerData.beybladeStats || {
+          spinFinishes: 0,
+          overFinishes: 0,
+          burstFinishes: 0,
+          extremeFinishes: 0,
+        },
+      };
+      return newPlayer;
+    }
+
+    const response = await fetch(`${this.baseUrl}/createPlayer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(playerData),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  }
+
+  async updatePlayer(id: string, updates: Partial<Player>): Promise<Player> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const updatedPlayer: Player = {
+        id: id,
+        name: updates.name || "Updated Player",
+        email: updates.email || "updated@email.com",
+        avatar:
+          updates.avatar ||
+          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop",
+        beybladeStats: updates.beybladeStats || {
+          spinFinishes: 0,
+          overFinishes: 0,
+          burstFinishes: 0,
+          extremeFinishes: 0,
+        },
+      };
+      return updatedPlayer;
+    }
+
+    const response = await fetch(`${this.baseUrl}/updatePlayer/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    });
+    return await response.json();
+  }
+
+  async deleteTournament(id: string): Promise<boolean> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      return true;
+    }
+
+    const response = await fetch(`${this.baseUrl}/tournaments/${id}`, {
+      method: "DELETE",
+    });
+    return response.ok;
   }
 
   // --- Authentication ---

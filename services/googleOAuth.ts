@@ -8,7 +8,6 @@ export const GOOGLE_CONFIG = {
 // API Configuration
 export const API_CONFIG = {
   baseUrl:
-    (import.meta as any).env?.VITE_API_BASE_URL ||
     "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging",
   timeout: 10000,
 };

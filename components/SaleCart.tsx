@@ -91,9 +91,11 @@ const SaleCart: React.FC<SaleCartProps> = ({
           <div className="border-t border-slate-700 pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Subtotal</span>
-<span className="text-white">{formatCurrency(subtotal)}</span>
-              <span className="text-white">{formatCurrency(tax)}</span>
-              <span className="text-indigo-400">{formatCurrency(total)}</span>
+              <span className="text-white">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Total</span>
+              <span className="text-indigo-400 font-medium">{formatCurrency(total)}</span>
             </div>
           </div>
 
