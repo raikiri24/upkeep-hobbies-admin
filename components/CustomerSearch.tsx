@@ -3,7 +3,7 @@ import { Search, Plus, X, User, Mail, Phone } from 'lucide-react';
 import { Customer, CustomerFormData } from '../types';
 import { apiService } from '../services/apiService';
 import { DialogService } from '../services/dialogService';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, formatCurrencyPlain } from '../utils/currency';
 
 interface CustomerSearchProps {
   onClose: () => void;
@@ -208,7 +208,7 @@ const CustomerSearch: React.FC<CustomerSearchProps> = ({ onClose, onSelectCustom
                         )}
                       </div>
                       <div className="mt-2 text-xs text-slate-500">
-                        Total Purchases: {formatCurrency(customer.totalPurchases)} • {customer.visits} visits
+                        Total Purchases: {formatCurrencyPlain(customer.totalPurchases)} • {customer.visits} visits
                       </div>
                     </div>
                   </div>

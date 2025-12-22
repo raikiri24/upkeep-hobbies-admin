@@ -28,6 +28,11 @@ export const formatCurrencyForExport = (amount: number): string => {
   return amount.toFixed(2);
 };
 
+// Format currency without symbol for data display
+export const formatCurrencyPlain = (amount: number): string => {
+  return amount.toFixed(2);
+};
+
 // Payment method icons with Philippine context
 export const getPaymentMethodIcon = (method: string) => {
   switch (method.toLowerCase()) {

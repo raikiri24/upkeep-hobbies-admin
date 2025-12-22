@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShoppingCart, Plus, Minus, X, CreditCard } from 'lucide-react';
 import { CartItem } from '../types';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, formatCurrencyPlain } from '../utils/currency';
 
 interface SaleCartProps {
   cart: CartItem[];
@@ -46,7 +46,7 @@ const SaleCart: React.FC<SaleCartProps> = ({
                   <div className="flex-1">
                     <h4 className="font-medium text-white text-sm">{cartItem.item.name}</h4>
                     <p className="text-slate-400 text-xs">{cartItem.item.sku}</p>
-                    <p className="text-indigo-400 font-medium">{formatCurrency(cartItem.item.price)}</p>
+                    <p className="text-indigo-400 font-medium">{formatCurrencyPlain(cartItem.item.price)}</p>
                   </div>
                   <button
                     onClick={() => onRemoveItem(cartItem.item.id)}
@@ -76,7 +76,7 @@ const SaleCart: React.FC<SaleCartProps> = ({
                   </div>
                   <div className="text-right">
                     <p className="text-white font-medium">
-                      ${formatCurrency(cartItem.item.price * cartItem.quantity)}
+                      ${formatCurrencyPlain(cartItem.item.price * cartItem.quantity)}
                     </p>
                     {cartItem.quantity > cartItem.item.stock && (
                       <p className="text-red-400 text-xs">Insufficient stock</p>
@@ -91,11 +91,11 @@ const SaleCart: React.FC<SaleCartProps> = ({
           <div className="border-t border-slate-700 pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Subtotal</span>
-              <span className="text-white">{formatCurrency(subtotal)}</span>
+              <span className="text-white">{formatCurrencyPlain(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Total</span>
-              <span className="text-indigo-400 font-medium">{formatCurrency(total)}</span>
+              <span className="text-indigo-400 font-medium">{formatCurrencyPlain(total)}</span>
             </div>
           </div>
 

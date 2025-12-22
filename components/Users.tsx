@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiService } from "../services/apiService";
 import { Player, BeybladeStats } from "../types";
+import { generateAvatarUrl } from "../utils/avatar";
 
 // --- Sub-Component: StatCounter ---
 // Extracts the logic for the +/- buttons to keep the main component clean
@@ -16,14 +17,14 @@ const StatCounter: React.FC<StatCounterProps> = ({
   onChange,
 }) => {
   return (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
-      <label className="text-sm font-medium text-gray-700 w-1/3">{label}</label>
+    <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-slate-700">
+      <label className="text-sm font-medium text-slate-300 w-1/3">{label}</label>
       <div className="flex items-center space-x-2">
         {/* Decrement Button */}
         <button
           type="button"
           onClick={() => onChange(Math.max(0, value - 1))} // Prevent negative numbers
-          className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded hover:bg-red-200 font-bold transition-colors"
+          className="w-8 h-8 flex items-center justify-center bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 font-bold transition-colors"
         >
           -
         </button>
@@ -33,14 +34,14 @@ const StatCounter: React.FC<StatCounterProps> = ({
           type="number"
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-          className="w-16 text-center border-gray-300 rounded-md shadow-sm p-1 text-black "
+          className="w-16 text-center bg-slate-700 border border-slate-600 rounded-md p-2 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
         />
 
         {/* Increment Button */}
         <button
           type="button"
           onClick={() => onChange(value + 1)}
-          className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-600 rounded hover:bg-green-200 font-bold transition-colors"
+          className="w-8 h-8 flex items-center justify-center bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 font-bold transition-colors"
         >
           +
         </button>
@@ -90,7 +91,7 @@ const Users: React.FC = () => {
     setFormData({
       name: '',
       email: '',
-      avatar: '',
+      avatar: generateAvatarUrl(''), // Generate with empty seed initially
       beybladeStats: {
         spinFinishes: 0,
         overFinishes: 0,
@@ -105,7 +106,17 @@ const Users: React.FC = () => {
   // Handles standard text inputs (Name, Email, Avatar)
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Auto-generate avatar when name changes for new players
+    if (name === 'name' && isAddingNew) {
+      setFormData((prev) => ({ 
+        ...prev, 
+        [name]: value,
+        avatar: value ? generateAvatarUrl(value) : generateAvatarUrl('')
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // Handles the specific update of a stat via the +/- buttons
@@ -137,7 +148,7 @@ const Users: React.FC = () => {
     
     try {
       if (isAddingNew) {
-        // Create new player
+        // Create new player with avatar from form
         const newPlayer = await apiService.createPlayer(formData);
         console.log("Create successful:", newPlayer);
         setPlayers((prevPlayers) => [...prevPlayers, newPlayer]);
@@ -189,184 +200,201 @@ const Users: React.FC = () => {
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-white">Manage Players</h1>
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 text-red-700">
-          {error}
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">Manage Players</h1>
+          <p className="text-slate-400">Manage player profiles and battle statistics</p>
         </div>
-      )}
-      {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 text-green-700">
-          {successMessage}
-        </div>
-      )}
 
-      <div className="flex gap-6">
-        {/* Left Column: List */}
-        <div className="w-1/3 bg-white shadow rounded-lg p-4 h-fit">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700">Roster</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleAddNewPlayer}
-                className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                + Add New Player
-              </button>
-              {loading && (
-                <span className="text-xs text-gray-500">Syncing...</span>
-              )}
-            </div>
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-red-400">
+            {error}
           </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6 text-green-400">
+            {successMessage}
+          </div>
+        )}
 
-          <ul className="space-y-2 max-h-[70vh] overflow-y-auto">
-            {players.map((player) => (
-              <li
-                key={player.id}
-                className={`cursor-pointer p-3 rounded-md transition-all ${
-                  selectedPlayer?.id === player.id
-                    ? "bg-blue-50 border-blue-500 border-l-4 shadow-sm"
-                    : "hover:bg-gray-50 border border-transparent"
-                }`}
-                onClick={() => handleSelectPlayer(player)}
-              >
-                <div className="font-medium text-gray-900">{player.name}</div>
-                <div className="text-sm text-gray-500 truncate">
-                  {player.email}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Right Column: Edit Form */}
-        <div className="w-2/3 bg-white shadow rounded-lg p-6">
-          {selectedPlayer || isAddingNew ? (
-            <div>
-              <div className="border-b pb-4 mb-4">
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  {isAddingNew ? 'Add New Player' : 'Edit Profile'}
-                </h2>
-                {!isAddingNew && selectedPlayer && (
-                  <p className="text-sm text-gray-500">
-                    ID: {selectedPlayer.id}
-                  </p>
+        <div className="flex gap-6">
+          {/* Left Column: List */}
+          <div className="w-1/3 bg-slate-900 border border-slate-800 rounded-xl p-6 h-fit">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Roster</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAddNewPlayer}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  + Add New Player
+                </button>
+                {loading && (
+                  <span className="text-xs text-slate-500">Syncing...</span>
                 )}
               </div>
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Info Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name || ""}
-                      onChange={handleTextChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+            <ul className="space-y-2 max-h-[70vh] overflow-y-auto">
+              {players.map((player) => (
+                <li
+                  key={player.id}
+                  className={`cursor-pointer p-4 rounded-lg transition-all ${
+                    selectedPlayer?.id === player.id
+                      ? "bg-indigo-600/20 border-indigo-500/50 border-l-4 shadow-sm"
+                      : "hover:bg-slate-800 border border-slate-700"
+                  }`}
+                  onClick={() => handleSelectPlayer(player)}
+                >
+                  <div className="font-medium text-white">{player.name}</div>
+                  <div className="text-sm text-slate-400 truncate">
+                    {player.email}
                   </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email || ""}
-                      onChange={handleTextChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="col-span-1 md:col-span-2">
-                    <label
-                      htmlFor="avatar"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Avatar URL
-                    </label>
-                    <input
-                      type="text"
-                      name="avatar"
-                      value={formData.avatar || ""}
-                      onChange={handleTextChange}
-                      className=" text-black  mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Right Column: Edit Form */}
+          <div className="w-2/3 bg-slate-900 border border-slate-800 rounded-xl p-6">
+            {selectedPlayer || isAddingNew ? (
+              <div>
+                <div className="border-b border-slate-800 pb-4 mb-6">
+                  <h2 className="text-2xl font-semibold text-white">
+                    {isAddingNew ? 'Add New Player' : 'Edit Profile'}
+                  </h2>
+                  {!isAddingNew && selectedPlayer && (
+                    <p className="text-sm text-slate-500">
+                      ID: {selectedPlayer.id}
+                    </p>
+                  )}
                 </div>
 
-                {/* Stats Section with Custom Counters */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 border-b pb-2">
-                    Battle Statistics
-                  </h3>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Personal Info Section */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <StatCounter
-                      label="Spin Finishes"
-                      value={formData.beybladeStats?.spinFinishes || 0}
-                      onChange={(val) => handleStatUpdate("spinFinishes", val)}
-                    />
-                    <StatCounter
-                      label="Over Finishes"
-                      value={formData.beybladeStats?.overFinishes || 0}
-                      onChange={(val) => handleStatUpdate("overFinishes", val)}
-                    />
-                    <StatCounter
-                      label="Burst Finishes"
-                      value={formData.beybladeStats?.burstFinishes || 0}
-                      onChange={(val) => handleStatUpdate("burstFinishes", val)}
-                    />
-                    <StatCounter
-                      label="Extreme Finishes"
-                      value={formData.beybladeStats?.extremeFinishes || 0}
-                      onChange={(val) =>
-                        handleStatUpdate("extremeFinishes", val)
-                      }
-                    />
+                    <div>
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleTextChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email || ""}
+                        onChange={handleTextChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                    </div>
+                    <div className="col-span-1 md:col-span-2">
+                      <label
+                        htmlFor="avatar"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Avatar URL {isAddingNew && formData.name && <span className="text-xs text-slate-500">(Auto-generated from name)</span>}
+                      </label>
+                      <input
+                        type="text"
+                        name="avatar"
+                        value={formData.avatar || ""}
+                        onChange={handleTextChange}
+                        placeholder="Avatar URL will be auto-generated from name"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                      {isAddingNew && formData.avatar && (
+                        <div className="mt-2 flex items-center gap-3">
+                          <img 
+                            src={formData.avatar} 
+                            alt="Avatar preview" 
+                            className="w-12 h-12 rounded-full border-2 border-slate-600"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                          <span className="text-xs text-slate-500">Preview</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex justify-end pt-4">
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 transition-colors shadow-sm"
-                    disabled={loading}
-                  >
-                    {loading ? "Saving..." : (isAddingNew ? "Create Player" : "Save Changes")}
-                  </button>
-                </div>
-              </form>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <svg
-                className="w-16 h-16 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              <p className="text-lg">Select a player to edit details</p>
-            </div>
-          )}
+                  {/* Stats Section with Custom Counters */}
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-4 border-b border-slate-800 pb-2">
+                      Battle Statistics
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <StatCounter
+                        label="Spin Finishes"
+                        value={formData.beybladeStats?.spinFinishes || 0}
+                        onChange={(val) => handleStatUpdate("spinFinishes", val)}
+                      />
+                      <StatCounter
+                        label="Over Finishes"
+                        value={formData.beybladeStats?.overFinishes || 0}
+                        onChange={(val) => handleStatUpdate("overFinishes", val)}
+                      />
+                      <StatCounter
+                        label="Burst Finishes"
+                        value={formData.beybladeStats?.burstFinishes || 0}
+                        onChange={(val) => handleStatUpdate("burstFinishes", val)}
+                      />
+                      <StatCounter
+                        label="Extreme Finishes"
+                        value={formData.beybladeStats?.extremeFinishes || 0}
+                        onChange={(val) =>
+                          handleStatUpdate("extremeFinishes", val)
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-800 disabled:cursor-not-allowed transition-colors shadow-lg"
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : (isAddingNew ? "Create Player" : "Save Changes")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <svg
+                  className="w-16 h-16 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <p className="text-lg">Select a player to edit details</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

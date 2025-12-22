@@ -3,7 +3,7 @@ import { apiService } from '../services/apiService';
 import { Item, ItemFormData } from '../types';
 import { Plus, Trash2, Edit2, Search, Package, AlertCircle, Loader2, Save, X, ImageIcon, ShoppingCart } from 'lucide-react';
 import { DialogService } from '../services/dialogService';
-import { formatCurrency, getCurrencySymbol } from '../utils/currency';
+import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from '../utils/currency';
 
 const Inventory: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -208,7 +208,7 @@ const Inventory: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="p-4 text-slate-300 font-mono">{formatCurrency(item.price)}</td>
+                    <td className="p-4 text-slate-300 font-mono">{formatCurrencyPlain(item.price)}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
                         ${item.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 

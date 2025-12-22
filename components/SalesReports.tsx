@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, DollarSign, ShoppingCart, Package, Users, ArrowUp, ArrowDown } from 'lucide-react';
 import { PosReport, Sale } from '../types';
 import { apiService } from '../services/apiService';
-import { formatCurrency, getCurrencySymbol } from '../utils/currency';
+import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from '../utils/currency';
 
 interface SalesReportsProps {}
 
@@ -121,7 +121,7 @@ const SalesReports: React.FC<SalesReportsProps> = () => {
               </div>
               <TrendingUp className="h-4 w-4 text-green-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white">{formatCurrency(report.totalSales)}</h3>
+            <h3 className="text-2xl font-bold text-white">{formatCurrencyPlain(report.totalSales)}</h3>
             <p className="text-slate-400 text-sm">Total Sales</p>
           </div>
 

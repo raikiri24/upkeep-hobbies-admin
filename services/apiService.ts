@@ -594,6 +594,79 @@ class ApiService {
     });
     return await response.json();
   }
+
+  // --- Newsletter ---
+  async sendNewsletter(subject: string, message: string, featuredItems: string[]): Promise<{ success: boolean; message: string }> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      console.log('Sending newsletter:', { subject, message, featuredItems });
+      return {
+        success: true,
+        message: "Newsletter sent successfully to all subscribers"
+      };
+    }
+
+    const response = await fetch(`${this.baseUrl}/newsletter/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subject,
+        message,
+        featuredItems
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to send newsletter");
+    }
+    
+    return await response.json();
+  }
+
+  // --- POS Reports ---
+  async getPosReport(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PosReport> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      // Mock POS report data
+      const mockReport: PosReport = {
+        totalSales: 15678.50,
+        totalTransactions: 124,
+        averageSale: 126.44,
+        salesByCategory: [
+          { category: 'RC Vehicles', amount: 8934.25, percentage: 57 },
+          { category: 'Drones', amount: 3921.75, percentage: 25 },
+          { category: 'Kits', amount: 2356.50, percentage: 15 },
+          { category: 'Supplies', amount: 466.00, percentage: 3 },
+        ],
+        paymentMethods: [
+          { method: 'cash', amount: 8234.25, percentage: 52.5 },
+          { method: 'card', amount: 5447.75, percentage: 34.7 },
+          { method: 'digital', amount: 1996.50, percentage: 12.8 },
+        ],
+        hourlySales: [
+          { hour: 9, revenue: 1245.50 },
+          { hour: 10, revenue: 2134.25 },
+          { hour: 11, revenue: 1876.75 },
+          { hour: 12, revenue: 2342.00 },
+          { hour: 13, revenue: 1989.25 },
+          { hour: 14, revenue: 1654.50 },
+          { hour: 15, revenue: 1436.25 },
+        ]
+      };
+      return mockReport;
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+
+    const response = await fetch(`${this.baseUrl}/pos/report?${queryParams}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  }
 }
 
 export const apiService = new ApiService();

@@ -7,7 +7,7 @@ import SaleCart from './SaleCart';
 import CustomerSearch from './CustomerSearch';
 import PaymentProcessor from './PaymentProcessor';
 import { DialogService } from '../services/dialogService';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, formatCurrencyPlain } from '../utils/currency';
 
 interface PosTerminalProps {}
 
@@ -219,7 +219,7 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
                       <h3 className="font-medium text-white text-sm mb-1 line-clamp-2">{item.name}</h3>
                       <p className="text-slate-400 text-xs mb-2">{item.sku}</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold text-indigo-400">{formatCurrency(item.price)}</span>
+                        <span className="text-lg font-bold text-indigo-400">{formatCurrencyPlain(item.price)}</span>
                         <span className="text-xs text-slate-400">Stock: {item.stock}</span>
                       </div>
                     </div>
@@ -245,7 +245,7 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
                       {selectedCustomer.email && <p className="text-slate-400 text-sm">{selectedCustomer.email}</p>}
                       {selectedCustomer.phone && <p className="text-slate-400 text-sm">{selectedCustomer.phone}</p>}
                       <div className="mt-2 text-xs text-slate-500">
-                        <p>Total Purchases: {formatCurrency(selectedCustomer.totalPurchases)}</p>
+                        <p>Total Purchases: {formatCurrencyPlain(selectedCustomer.totalPurchases)}</p>
                         <p>Visits: {selectedCustomer.visits}</p>
                       </div>
                     </div>

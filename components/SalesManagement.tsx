@@ -5,7 +5,7 @@ import { apiService } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import SaleFilters from './SaleFilters';
 import { DialogService } from '../services/dialogService';
-import { formatCurrency, formatCurrencySimple, formatCurrencyForExport, getPaymentMethodIcon } from '../utils/currency';
+import { formatCurrency, formatCurrencySimple, formatCurrencyForExport, formatCurrencyPlain, getPaymentMethodIcon } from '../utils/currency';
 
 
 interface SalesManagementProps {}
@@ -437,7 +437,7 @@ const SalesManagement: React.FC<SalesManagementProps> = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-slate-300 font-medium">
-                        {formatCurrency(sale.total)}
+                        {formatCurrencyPlain(sale.total)}
                       </td>
                       <td className="px-6 py-4 text-slate-300">
                         <div className="flex items-center gap-2">
@@ -572,8 +572,8 @@ const SalesManagement: React.FC<SalesManagementProps> = () => {
                         <p className="text-sm text-slate-400">{item.sku}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-white">{item.quantity} × {formatCurrencySimple(item.price)}</p>
-                        <p className="font-medium text-indigo-400">{formatCurrency(item.subtotal)}</p>
+                        <p className="text-white">{item.quantity} × {formatCurrencyPlain(item.price)}</p>
+                        <p className="font-medium text-indigo-400">{formatCurrencyPlain(item.subtotal)}</p>
                       </div>
                     </div>
                   ))}
@@ -585,15 +585,9 @@ const SalesManagement: React.FC<SalesManagementProps> = () => {
                 <div className="space-y-2">
 <div className="flex justify-between">
                      <span className="text-slate-400">Subtotal</span>
-                     <span className="text-white">{formatCurrency(selectedSale.subtotal)}</span>
-                   </div>
-                   <div className="flex justify-between">
-                     <span className="text-slate-400">Tax</span>
-                     <span className="text-white">{formatCurrency(selectedSale.tax)}</span>
-                   </div>
-                   <div className="flex justify-between text-lg font-bold border-t border-slate-700 pt-2">
-                     <span className="text-white">Total</span>
-                     <span className="text-indigo-400">{formatCurrency(selectedSale.total)}</span>
+                      <span className="text-white">{formatCurrencyPlain(selectedSale.subtotal)}</span>
+                      <span className="text-white">{formatCurrencyPlain(selectedSale.tax)}</span>
+                      <span className="text-indigo-400">{formatCurrencyPlain(selectedSale.total)}</span>
                    </div>
                 </div>
               </div>

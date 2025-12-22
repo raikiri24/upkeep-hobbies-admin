@@ -180,6 +180,20 @@ export interface PosReport {
     sales: number;
     revenue: number;
   }>;
+  salesByCategory: Array<{
+    category: string;
+    amount: number;
+    percentage: number;
+  }>;
+  paymentMethods: Array<{
+    method: string;
+    amount: number;
+    percentage: number;
+  }>;
+  hourlySales: Array<{
+    hour: number;
+    revenue: number;
+  }>;
   period: {
     start: string;
     end: string;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, DollarSign, CreditCard, Smartphone, CheckCircle } from 'lucide-react';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, formatCurrencyPlain } from '../utils/currency';
 
 interface PaymentProcessorProps {
   total: number;
@@ -93,7 +93,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
         <div className="bg-slate-800 rounded-lg p-4 mb-6">
           <div className="text-center">
             <p className="text-slate-400 text-sm mb-1">Total Amount</p>
-            <p className="text-3xl font-bold text-white">{formatCurrency(total)}</p>
+            <p className="text-3xl font-bold text-white">{formatCurrencyPlain(total)}</p>
           </div>
         </div>
 

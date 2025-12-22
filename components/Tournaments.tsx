@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiService } from "../services/apiService";
 import { Tournament, TournamentFormData, Player } from "../types";
+import { generateAvatarUrl } from "../utils/avatar";
 
 const Tournaments: React.FC = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -24,6 +25,7 @@ const Tournaments: React.FC = () => {
   const [newPlayer, setNewPlayer] = useState<Partial<Player>>({
     name: "",
     email: "",
+    avatar: generateAvatarUrl(''), // Generate with empty seed initially
     beybladeStats: {
       spinFinishes: 0,
       overFinishes: 0,
@@ -94,6 +96,21 @@ const Tournaments: React.FC = () => {
               name === 'season' || name === 'maxPlayers' ? parseInt(value, 10) : 
               value
     }));
+  };
+
+  const handleNewPlayerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Auto-generate avatar when name changes
+    if (name === 'name') {
+      setNewPlayer((prev) => ({ 
+        ...prev, 
+        [name]: value,
+        avatar: value ? generateAvatarUrl(value) : generateAvatarUrl('')
+      }));
+    } else {
+      setNewPlayer((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleParticipantToggle = (playerId: string) => {
@@ -301,6 +318,7 @@ const Tournaments: React.FC = () => {
     setError(null);
     
     try {
+      // Create player with avatar from form
       console.log("Creating player with data:", newPlayer);
       const createdPlayer = await apiService.createPlayer(newPlayer);
       console.log("Created player response:", createdPlayer);
@@ -324,6 +342,7 @@ const Tournaments: React.FC = () => {
       setNewPlayer({
         name: "",
         email: "",
+        avatar: generateAvatarUrl(''),
         beybladeStats: {
           spinFinishes: 0,
           overFinishes: 0,
@@ -343,531 +362,562 @@ const Tournaments: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'In Progress': return 'bg-blue-100 text-blue-800';
-      case 'Scheduled': return 'bg-yellow-100 text-yellow-800';
-      case 'Cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Completed': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      case 'In Progress': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'Scheduled': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'Cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      default: return 'bg-slate-700 text-slate-400 border-slate-600';
     }
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-white">Manage Tournaments</h1>
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 text-red-700">
-          {error}
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">Manage Tournaments</h1>
+          <p className="text-slate-400">Organize and manage tournaments and player standings</p>
         </div>
-      )}
-      {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 text-green-700">
-          {successMessage}
-        </div>
-      )}
 
-      <div className="flex gap-6">
-        {/* Left Column: List */}
-        <div className="w-1/3 bg-white shadow rounded-lg p-4 h-fit">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700">Tournaments</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleAddNewTournament}
-                className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                + Add New
-              </button>
-              {loading && (
-                <span className="text-xs text-gray-500">Syncing...</span>
-              )}
-            </div>
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-red-400">
+            {error}
           </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6 text-green-400">
+            {successMessage}
+          </div>
+        )}
 
-          <ul className="space-y-2 max-h-[70vh] overflow-y-auto">
-            {tournaments.map((tournament) => (
-              <li
-                key={tournament._id}
-                className={`cursor-pointer p-3 rounded-md transition-all ${
-                  selectedTournament?._id === tournament._id
-                    ? "bg-blue-50 border-blue-500 border-l-4 shadow-sm"
-                    : "hover:bg-gray-50 border border-transparent"
-                }`}
-                onClick={() => handleSelectTournament(tournament)}
-              >
-                <div className="font-medium text-gray-900">{tournament.name}</div>
-                <div className="text-sm text-gray-500">
-                  {tournament.game} - Season {tournament.season}
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-gray-400">
-                    {new Date(tournament.date).toLocaleDateString()}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(tournament.status)}`}>
-                    {tournament.status}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Right Column: Edit Form */}
-        <div className="w-2/3 bg-white shadow rounded-lg p-6">
-          {selectedTournament || isAddingNew ? (
-            <div>
-              <div className="border-b pb-4 mb-4">
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  {isAddingNew ? 'Add New Tournament' : 'Edit Tournament'}
-                </h2>
-                {!isAddingNew && selectedTournament && (
-                  <p className="text-sm text-gray-500">
-                    ID: {selectedTournament._id}
-                  </p>
+        <div className="flex gap-6">
+          {/* Left Column: List */}
+          <div className="w-1/3 bg-slate-900 border border-slate-800 rounded-xl p-6 h-fit">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Tournaments</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAddNewTournament}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  + Add New
+                </button>
+                {loading && (
+                  <span className="text-xs text-slate-500">Syncing...</span>
                 )}
               </div>
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Tournament Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
+            <ul className="space-y-2 max-h-[70vh] overflow-y-auto">
+              {tournaments.map((tournament) => (
+                <li
+                  key={tournament._id}
+                  className={`cursor-pointer p-4 rounded-lg transition-all ${
+                    selectedTournament?._id === tournament._id
+                      ? "bg-indigo-600/20 border-indigo-500/50 border-l-4 shadow-sm"
+                      : "hover:bg-slate-800 border border-slate-700"
+                  }`}
+                  onClick={() => handleSelectTournament(tournament)}
+                >
+                  <div className="font-medium text-white">{tournament.name}</div>
+                  <div className="text-sm text-slate-400">
+                    {tournament.game} - Season {tournament.season}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Game
-                    </label>
-                    <select
-                      name="game"
-                      value={formData.game}
-                      onChange={handleInputChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="Beyblade X">Beyblade X</option>
-                      <option value="Beyblade Burst">Beyblade Burst</option>
-                      <option value="Beyblade Metal Saga">Beyblade Metal Saga</option>
-                    </select>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-slate-500">
+                      {new Date(tournament.date).toLocaleDateString()}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(tournament.status)}`}>
+                      {tournament.status}
+                    </span>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Date
-                    </label>
-                    <input
-                      type="datetime-local"
-                      name="date"
-                      value={formData.date.toISOString().slice(0, 16)}
-                      onChange={handleInputChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Season
-                    </label>
-                    <input
-                      type="number"
-                      name="season"
-                      value={formData.season}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="Scheduled">Scheduled</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Max Players
-                    </label>
-                    <input
-                      type="number"
-                      name="maxPlayers"
-                      value={formData.maxPlayers}
-                      onChange={handleInputChange}
-                      min="2"
-                      className="text-black mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                {/* Participants */}
-                <div>
-                  <div className="flex justify-between items-center mb-3 border-b pb-2">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Participants ({formData.participants.length}/{formData.maxPlayers})
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddPlayer(!showAddPlayer)}
-                      className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      + Quick Add Player
-                    </button>
-                  </div>
-                  
-                  {/* Quick Add Player Form */}
-                  {showAddPlayer && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-                      <h4 className="text-sm font-medium text-blue-900 mb-3">Add New Player</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
-                          <input
-                            type="text"
-                            value={newPlayer.name || ""}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-                            className="w-full text-sm text-black border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Player name"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
-                          <input
-                            type="email"
-                            value={newPlayer.email || ""}
-                            onChange={(e) => setNewPlayer({ ...newPlayer, email: e.target.value })}
-                            className="w-full text-sm text-black border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="player@email.com"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2 mt-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddPlayer(false);
-                            setNewPlayer({
-                              name: "",
-                              email: "",
-                              beybladeStats: {
-                                spinFinishes: 0,
-                                overFinishes: 0,
-                                burstFinishes: 0,
-                                extremeFinishes: 0,
-                              }
-                            });
-                          }}
-                          className="px-3 py-1 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleAddPlayer}
-                          disabled={loading || !newPlayer.name || !newPlayer.email}
-                          className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-                        >
-                          Add Player
-                        </button>
-                      </div>
-                    </div>
+          {/* Right Column: Edit Form */}
+          <div className="w-2/3 bg-slate-900 border border-slate-800 rounded-xl p-6">
+            {selectedTournament || isAddingNew ? (
+              <div>
+                <div className="border-b border-slate-800 pb-4 mb-6">
+                  <h2 className="text-2xl font-semibold text-white">
+                    {isAddingNew ? 'Add New Tournament' : 'Edit Tournament'}
+                  </h2>
+                  {!isAddingNew && selectedTournament && (
+                    <p className="text-sm text-slate-500">
+                      ID: {selectedTournament._id}
+                    </p>
                   )}
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                    {players.map((player) => (
-                      <label
-                        key={player.id}
-                        className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.participants.includes(player.id)}
-                          onChange={() => handleParticipantToggle(player.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{player.name}</span>
-                      </label>
-                    ))}
-                  </div>
                 </div>
 
-                {/* Match Logging */}
-                {formData.standings && formData.standings.length > 1 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3 border-b pb-2">
-                      Log Match Results
-                    </h3>
-                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Winner</label>
-                          <select
-                            id="winner-select"
-                            className="w-full text-black border border-gray-300 rounded-md p-2 text-sm"
-                          >
-                            <option value="">Select winner</option>
-                            {formData.standings.map((standing) => {
-                              const player = players.find(p => p.id === standing.userId);
-                              return (
-                                <option key={standing.userId} value={standing.userId}>
-                                  {player?.name || 'Unknown'}
-                                </option>
-                              );
-                            })}
-                          </select>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Tournament Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Game
+                      </label>
+                      <select
+                        name="game"
+                        value={formData.game}
+                        onChange={handleInputChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      >
+                        <option value="Beyblade X">Beyblade X</option>
+                        <option value="Beyblade Burst">Beyblade Burst</option>
+                        <option value="Beyblade Metal Saga">Beyblade Metal Saga</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        name="date"
+                        value={formData.date.toISOString().slice(0, 16)}
+                        onChange={handleInputChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Season
+                      </label>
+                      <input
+                        type="number"
+                        name="season"
+                        value={formData.season}
+                        onChange={handleInputChange}
+                        min="1"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      >
+                        <option value="Scheduled">Scheduled</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Max Players
+                      </label>
+                      <input
+                        type="number"
+                        name="maxPlayers"
+                        value={formData.maxPlayers}
+                        onChange={handleInputChange}
+                        min="2"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Participants */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                      <h3 className="text-lg font-medium text-white">
+                        Participants ({formData.participants.length}/{formData.maxPlayers})
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddPlayer(!showAddPlayer)}
+                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        + Quick Add Player
+                      </button>
+                    </div>
+                    
+                    {/* Quick Add Player Form */}
+                    {showAddPlayer && (
+                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 mb-4">
+                        <h4 className="text-sm font-medium text-white mb-4">Add New Player</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-300 mb-1">Name</label>
+                            <input
+                              type="text"
+                              value={newPlayer.name || ""}
+                              onChange={handleNewPlayerChange}
+                              name="name"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                              placeholder="Player name"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
+                            <input
+                              type="email"
+                              value={newPlayer.email || ""}
+                              onChange={handleNewPlayerChange}
+                              name="email"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                              placeholder="player@email.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-300 mb-1">
+                              Avatar URL {newPlayer.name && <span className="text-xs text-slate-500">(Auto-generated from name)</span>}
+                            </label>
+                            <input
+                              type="text"
+                              value={newPlayer.avatar || ""}
+                              onChange={handleNewPlayerChange}
+                              name="avatar"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                              placeholder="Avatar URL will be auto-generated from name"
+                            />
+                            {newPlayer.avatar && (
+                              <div className="mt-2 flex items-center gap-3">
+                                <img 
+                                  src={newPlayer.avatar} 
+                                  alt="Avatar preview" 
+                                  className="w-12 h-12 rounded-full border-2 border-slate-600"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                                <span className="text-xs text-slate-500">Preview</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Loser</label>
-                          <select
-                            id="loser-select"
-                            className="w-full text-black border border-gray-300 rounded-md p-2 text-sm"
-                          >
-                            <option value="">Select loser</option>
-                            {formData.standings.map((standing) => {
-                              const player = players.find(p => p.id === standing.userId);
-                              return (
-                                <option key={standing.userId} value={standing.userId}>
-                                  {player?.name || 'Unknown'}
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </div>
-                        <div className="flex items-end gap-2">
+                        <div className="flex justify-end gap-2 mt-4">
                           <button
                             type="button"
                             onClick={() => {
-                              const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
-                              const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
-                              if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
-                                addMatchResult(winnerSelect.value, loserSelect.value);
-                                winnerSelect.value = '';
-                                loserSelect.value = '';
-                              }
+                              setShowAddPlayer(false);
+                              setNewPlayer({
+                                name: "",
+                                email: "",
+                                avatar: generateAvatarUrl(''),
+                                beybladeStats: {
+                                  spinFinishes: 0,
+                                  overFinishes: 0,
+                                  burstFinishes: 0,
+                                  extremeFinishes: 0,
+                                }
+                              });
                             }}
-                            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                            className="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-600 transition-colors"
                           >
-                            Log Match
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleAddPlayer}
+                            disabled={loading || !newPlayer.name || !newPlayer.email}
+                            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-slate-700 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Add Player
                           </button>
                         </div>
                       </div>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-slate-700 rounded-lg p-3 bg-slate-800/50">
+                      {players.map((player) => (
+                        <label
+                          key={player.id}
+                          className="flex items-center space-x-2 cursor-pointer hover:bg-slate-700 p-2 rounded-lg transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.participants.includes(player.id)}
+                            onChange={() => handleParticipantToggle(player.id)}
+                            className="rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-indigo-500 focus:ring-2"
+                          />
+                          <span className="text-sm text-slate-300">{player.name}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
-                )}
 
-                {/* Standings */}
-                <div>
-                  <div className="flex justify-between items-center mb-3 border-b pb-2">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Tournament Standings ({formData.standings?.length || 0})
-                    </h3>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={generateStandingsFromParticipants}
-                        className="px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-                        disabled={formData.participants.length === 0}
-                      >
-                        Generate from Participants
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {formData.standings && formData.standings.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border border-gray-200 rounded-md">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Automatically calculated based on score">Rank*</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">W-L</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {formData.standings
-                            .sort((a, b) => a.rank - b.rank)
-                            .map((standing) => {
-                            const player = players.find(p => p.id === standing.userId);
-                            const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
-                            const draws = 0; // Remove draws
-                            return (
-                              <tr key={standing.userId} className="hover:bg-gray-50">
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <input
-                                    type="number"
-                                    value={standing.rank}
-                                    disabled
-                                    className="w-16 text-black border border-gray-300 rounded p-1 text-sm font-medium bg-gray-100"
-                                    min="1"
-                                    title="Rank is automatically calculated based on score"
-                                  />
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 mr-2">
-                                      {player?.name?.charAt(0) || '?'}
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900">
-                                      {player?.name || 'Unknown Player'}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <div className="flex items-center space-x-1">
-                                    <div className="flex items-center">
-                                      <span className="text-green-600 font-bold text-sm">{wins}</span>
-                                      <span className="text-gray-400 mx-1">-</span>
-                                      <span className="text-red-600 font-bold text-sm">{losses}</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <div className="flex items-center space-x-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newWins = Math.max(0, wins - 1);
-                                        handleScoreChange(standing.userId, newWins, losses);
-                                      }}
-                                      className="w-6 h-6 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
-                                    >
-                                      -
-                                    </button>
-                                    <span className="w-8 text-center text-sm font-medium">{wins}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleScoreChange(standing.userId, wins + 1, losses);
-                                      }}
-                                      className="w-6 h-6 bg-green-100 text-green-600 rounded hover:bg-green-200 text-xs font-bold"
-                                    >
-                                      +
-                                    </button>
-                                    
-                                    <span className="mx-2 text-gray-400">|</span>
-                                    
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newLosses = Math.max(0, losses - 1);
-                                        handleScoreChange(standing.userId, wins, newLosses);
-                                      }}
-                                      className="w-6 h-6 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
-                                    >
-                                      -
-                                    </button>
-                                    <span className="w-8 text-center text-sm font-medium">{losses}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleScoreChange(standing.userId, wins, losses + 1);
-                                      }}
-                                      className="w-6 h-6 bg-green-100 text-green-600 rounded hover:bg-green-200 text-xs font-bold"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    value={standing.notes}
-                                    onChange={(e) => handleStandingChange(standing.userId, 'notes', e.target.value)}
-                                    className="w-32 text-black border border-gray-300 rounded p-1 text-sm"
-                                    placeholder="Notes..."
-                                  />
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap">
-                                  <button
-                                    type="button"
-                                    onClick={() => removeStanding(standing.userId)}
-                                    className="text-red-600 hover:text-red-800 text-sm"
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-md">
-                      <p className="text-sm">No standings added yet</p>
-                      <p className="text-xs mt-1">Add participants and click "Generate from Participants" or add standings manually</p>
+                  {/* Match Logging */}
+                  {formData.standings && formData.standings.length > 1 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium text-white mb-4 border-b border-slate-800 pb-2">
+                        Log Match Results
+                      </h3>
+                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Winner</label>
+                            <select
+                              id="winner-select"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                            >
+                              <option value="">Select winner</option>
+                              {formData.standings.map((standing) => {
+                                const player = players.find(p => p.id === standing.userId);
+                                return (
+                                  <option key={standing.userId} value={standing.userId}>
+                                    {player?.name || 'Unknown'}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Loser</label>
+                            <select
+                              id="loser-select"
+                              className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                            >
+                              <option value="">Select loser</option>
+                              {formData.standings.map((standing) => {
+                                const player = players.find(p => p.id === standing.userId);
+                                return (
+                                  <option key={standing.userId} value={standing.userId}>
+                                    {player?.name || 'Unknown'}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
+                                const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
+                                if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
+                                  addMatchResult(winnerSelect.value, loserSelect.value);
+                                  winnerSelect.value = '';
+                                  loserSelect.value = '';
+                                }
+                              }}
+                              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Log Match
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  
-                  {/* Note about automatic rankings */}
-                  {formData.standings && formData.standings.length > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-xs text-blue-700">
-                        <span className="font-medium">Note:</span> Rankings are automatically calculated based on player scores (primary: wins, secondary: win rate, tertiary: fewest losses). Rankings with * are calculated dynamically and included in the saved tournament data.
-                      </p>
-                    </div>
-                  )}
-                </div>
 
-                <div className="flex justify-between pt-4">
+                  {/* Standings */}
                   <div>
-                    {!isAddingNew && selectedTournament && (
-                      <button
-                        type="button"
-                        onClick={handleDelete}
-                        className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                      <h3 className="text-lg font-medium text-white">
+                        Tournament Standings ({formData.standings?.length || 0})
+                      </h3>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={generateStandingsFromParticipants}
+                          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed"
+                          disabled={formData.participants.length === 0}
+                        >
+                          Generate from Participants
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {formData.standings && formData.standings.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border border-slate-700 rounded-lg">
+                          <thead className="bg-slate-800">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider" title="Automatically calculated based on score">Rank*</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Player</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Score</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">W-L</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Notes</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-slate-900 divide-y divide-slate-800">
+                            {formData.standings
+                              .sort((a, b) => a.rank - b.rank)
+                              .map((standing) => {
+                              const player = players.find(p => p.id === standing.userId);
+                              const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
+                              return (
+                                <tr key={standing.userId} className="hover:bg-slate-800/50 transition-colors">
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <input
+                                      type="number"
+                                      value={standing.rank}
+                                      disabled
+                                      className="w-16 bg-slate-700 border border-slate-600 rounded p-2 text-sm font-medium text-slate-300"
+                                      min="1"
+                                      title="Rank is automatically calculated based on score"
+                                    />
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-300 mr-2">
+                                        {player?.name?.charAt(0) || '?'}
+                                      </div>
+                                      <span className="text-sm font-medium text-white">
+                                        {player?.name || 'Unknown Player'}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center space-x-1">
+                                      <div className="flex items-center">
+                                        <span className="text-green-400 font-bold text-sm">{wins}</span>
+                                        <span className="text-slate-500 mx-1">-</span>
+                                        <span className="text-red-400 font-bold text-sm">{losses}</span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center space-x-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newWins = Math.max(0, wins - 1);
+                                          handleScoreChange(standing.userId, newWins, losses);
+                                        }}
+                                        className="w-6 h-6 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-xs font-bold transition-colors"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="w-8 text-center text-sm font-medium text-white">{wins}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleScoreChange(standing.userId, wins + 1, losses);
+                                        }}
+                                        className="w-6 h-6 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 text-xs font-bold transition-colors"
+                                      >
+                                        +
+                                      </button>
+                                      
+                                      <span className="mx-2 text-slate-500">|</span>
+                                      
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newLosses = Math.max(0, losses - 1);
+                                          handleScoreChange(standing.userId, wins, newLosses);
+                                        }}
+                                        className="w-6 h-6 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-xs font-bold transition-colors"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="w-8 text-center text-sm font-medium text-white">{losses}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleScoreChange(standing.userId, wins, losses + 1);
+                                        }}
+                                        className="w-6 h-6 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 text-xs font-bold transition-colors"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <input
+                                      type="text"
+                                      value={standing.notes}
+                                      onChange={(e) => handleStandingChange(standing.userId, 'notes', e.target.value)}
+                                      className="w-32 bg-slate-700 border border-slate-600 rounded p-2 text-sm text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                      placeholder="Notes..."
+                                    />
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => removeStanding(standing.userId)}
+                                      className="text-red-400 hover:text-red-300 text-sm transition-colors"
+                                    >
+                                      Remove
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
+                        <p className="text-sm">No standings added yet</p>
+                        <p className="text-xs mt-1">Add participants and click "Generate from Participants" or add standings manually</p>
+                      </div>
+                    )}
+                    
+                    {/* Note about automatic rankings */}
+                    {formData.standings && formData.standings.length > 0 && (
+                      <div className="mt-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                        <p className="text-xs text-indigo-400">
+                          <span className="font-medium">Note:</span> Rankings are automatically calculated based on player scores (primary: wins, secondary: win rate, tertiary: fewest losses). Rankings with * are calculated dynamically and included in saved tournament data.
+                        </p>
+                      </div>
                     )}
                   </div>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 transition-colors shadow-sm"
-                    disabled={loading}
-                  >
-                    {loading ? "Saving..." : (isAddingNew ? "Create Tournament" : "Save Changes")}
-                  </button>
-                </div>
-              </form>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <svg
-                className="w-16 h-16 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-lg">Select a tournament to edit details</p>
-            </div>
-          )}
+
+                  <div className="flex justify-between pt-6 border-t border-slate-800">
+                    <div>
+                      {!isAddingNew && selectedTournament && (
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          className="px-4 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed"
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-700 disabled:cursor-not-allowed transition-colors shadow-lg"
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : (isAddingNew ? "Create Tournament" : "Save Changes")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <svg
+                  className="w-16 h-16 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-lg">Select a tournament to edit details</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
