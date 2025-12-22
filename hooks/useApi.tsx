@@ -270,6 +270,9 @@ export const useDeleteItem = () => {
       // Also refetch immediately to ensure UI updates
       queryClient.refetchQueries({ queryKey: ["items"] });
     },
+    onError: (error) => {
+      console.error("Failed to delete item:", error);
+    },
   });
 };
 
