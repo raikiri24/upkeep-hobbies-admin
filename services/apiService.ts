@@ -330,6 +330,22 @@ class ApiService {
     return await response.json();
   }
 
+  async deleteCustomer(id: string): Promise<boolean> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const index = mockCustomers.findIndex((customer) => customer.id === id);
+      if (index === -1) return false;
+      mockCustomers.splice(index, 1);
+      return true;
+    }
+
+    const response = await fetch(`${this.baseUrl}/customers/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.ok;
+  }
+
   async updateCustomer(
     id: string,
     updates: Partial<Customer>
