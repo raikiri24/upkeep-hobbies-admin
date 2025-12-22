@@ -25,8 +25,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, hasPermission, hasRole, hasAnyPermission, hasAllPermissions } = useAuth();
 
+  console.log('ProtectedRoute Debug - isAuthenticated:', isAuthenticated);
+  console.log('ProtectedRoute Debug - requiredPermission:', requiredPermission);
+  console.log('ProtectedRoute Debug - hasPermission result:', hasPermission(requiredPermission || ''));
+
   // Check if user is authenticated
   if (!isAuthenticated) {
+    console.log('User not authenticated, returning fallback');
     return fallback;
   }
 

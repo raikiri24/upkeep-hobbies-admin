@@ -7,17 +7,17 @@ export interface Item {
   stock: number;
   description: string;
   imageUrl?: string;
-  status: 'active' | 'draft' | 'archived';
+  status: "active" | "draft" | "archived";
   lastUpdated?: string;
 }
 
-export type ItemFormData = Omit<Item, 'id' | 'lastUpdated'>;
+export type ItemFormData = Omit<Item, "id" | "lastUpdated">;
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'editor';
+  role: "admin" | "editor";
   avatar?: string;
 }
 
@@ -60,13 +60,13 @@ export interface Tournament {
   date: Date;
   game: string;
   season: number;
-  status: 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
+  status: "Scheduled" | "In Progress" | "Completed" | "Cancelled";
   participants: string[];
   maxPlayers: number;
   standings?: TournamentStanding[];
 }
 
-export type TournamentFormData = Omit<Tournament, '_id'>;
+export type TournamentFormData = Omit<Tournament, "_id">;
 
 export interface GoogleUser {
   id: string;
@@ -82,7 +82,7 @@ export interface AuthUser {
   email: string;
   name: string;
   avatar?: string;
-  role: 'admin' | 'editor';
+  role: "super_admin" | "admin" | "manager" | "editor" | "viewer";
   createdAt: string;
   lastLogin?: string;
 }
@@ -90,7 +90,7 @@ export interface AuthUser {
 export interface AuthResponse {
   success: boolean;
   user?: AuthUser;
-  token?: string;
+  accessToken?: string;
   message?: string;
 }
 
@@ -116,7 +116,10 @@ export interface Customer {
   lastVisit?: string;
 }
 
-export type CustomerFormData = Omit<Customer, 'id' | 'totalPurchases' | 'visits' | 'createdAt' | 'lastVisit'>;
+export type CustomerFormData = Omit<
+  Customer,
+  "id" | "totalPurchases" | "visits" | "createdAt" | "lastVisit"
+>;
 
 export interface SaleItem {
   itemId: string;
@@ -134,8 +137,8 @@ export interface Sale {
   subtotal: number;
   tax: number;
   total: number;
-  paymentMethod: 'cash' | 'card' | 'digital';
-  paymentStatus: 'pending' | 'completed' | 'refunded' | 'failed';
+  paymentMethod: "cash" | "card" | "digital";
+  paymentStatus: "pending" | "completed" | "refunded" | "failed";
   customerId?: string;
   customerName?: string;
   staffId: string;
@@ -146,15 +149,18 @@ export interface Sale {
   refundAmount?: number;
 }
 
-export type SaleFormData = Omit<Sale, 'id' | 'timestamp' | 'staffName' | 'paymentStatus'>;
+export type SaleFormData = Omit<
+  Sale,
+  "id" | "timestamp" | "staffName" | "paymentStatus"
+>;
 
 export interface Transaction {
   id: string;
   saleId: string;
-  type: 'sale' | 'refund' | 'void';
+  type: "sale" | "refund" | "void";
   amount: number;
-  paymentMethod: 'cash' | 'card' | 'digital';
-  status: 'pending' | 'completed' | 'failed';
+  paymentMethod: "cash" | "card" | "digital";
+  status: "pending" | "completed" | "failed";
   timestamp: string;
   staffId: string;
   notes?: string;
@@ -175,24 +181,24 @@ export interface PosReport {
     card: number;
     digital: number;
   };
-  salesByHour: Array<{
-    hour: number;
-    sales: number;
-    revenue: number;
-  }>;
   salesByCategory: Array<{
     category: string;
     amount: number;
     percentage: number;
   }>;
-  paymentMethods: Array<{
-    method: string;
-    amount: number;
-    percentage: number;
+  salesByHour: Array<{
+    hour: number;
+    sales: number;
+    revenue: number;
   }>;
   hourlySales: Array<{
     hour: number;
     revenue: number;
+  }>;
+  paymentMethods: Array<{
+    method: string;
+    amount: number;
+    percentage: number;
   }>;
   period: {
     start: string;

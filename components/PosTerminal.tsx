@@ -202,25 +202,27 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
                   <p>No products found</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredItems.map(item => (
                     <div
                       key={item.id}
-                      className="bg-slate-800 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-indigo-500 transition-colors"
+                      className="bg-slate-800 border border-slate-700 rounded-lg p-3 cursor-pointer hover:border-indigo-500 transition-colors h-full flex flex-col"
                       onClick={() => addToCart(item)}
                     >
                       {item.imageUrl && (
                         <img
                           src={item.imageUrl}
                           alt={item.name}
-                          className="w-full h-24 object-cover rounded mb-3"
+                          className="w-full h-20 object-cover rounded mb-2"
                         />
                       )}
-                      <h3 className="font-medium text-white text-sm mb-1 line-clamp-2">{item.name}</h3>
-                      <p className="text-slate-400 text-xs mb-2">{item.sku}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold text-indigo-400">{formatCurrencyPlain(item.price)}</span>
-                        <span className="text-xs text-slate-400">Stock: {item.stock}</span>
+                      <div className="flex-1 flex flex-col">
+                        <h3 className="font-medium text-white text-xs mb-1 line-clamp-2 leading-tight">{item.name}</h3>
+                        <p className="text-slate-500 text-xs mb-2 font-mono">{item.sku}</p>
+                        <div className="mt-auto flex justify-between items-center">
+                          <span className="text-sm font-bold text-indigo-400">{formatCurrencyPlain(item.price)}</span>
+                          <span className="text-xs text-slate-400">Stock: {item.stock}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -259,7 +261,9 @@ const PosTerminal: React.FC<PosTerminalProps> = () => {
                 </div>
               ) : (
                 <button
-                  onClick={() => setShowCustomerSearch(true)}
+                  onClick={() => {
+                    DialogService.warning('Customer management is currently under development. This feature will be available in a future update.');
+                  }}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Plus className="h-5 w-5" />

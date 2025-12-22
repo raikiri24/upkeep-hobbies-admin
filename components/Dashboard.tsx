@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -11,9 +11,10 @@ import {
   Bar,
   Legend,
 } from "recharts";
-import { TrendingUp, Users, DollarSign, Package } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ShoppingCart } from "lucide-react";
 import RecentSales from "./RecentSales";
 import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from "../utils/currency";
+import { useItems } from "../hooks";
 
 const salesData = [
   { name: "Mon", sales: 4000, orders: 24 },
@@ -65,6 +66,10 @@ const StatCard: React.FC<{
 );
 
 const Dashboard: React.FC = () => {
+  // Calculate monthly sales from mock data (in real app, this would come from API)
+  const monthlySales = salesData.reduce((total, day) => total + day.sales, 0);
+  const lowStockCount = 8; // Mock data - in real app, this would be calculated from inventory
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold text-white tracking-wide mb-6">
@@ -74,18 +79,18 @@ const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Revenue"
-          value="12,450.00"
-          icon={<DollarSign />}
-          trend="+12.5%"
+          title="Monthly Sales"
+          value={formatCurrencyPlain(monthlySales)}
+          icon={<ShoppingCart />}
+          trend="234 orders"
           isPositive={true}
         />
         <StatCard
-          title="Active Orders"
-          value="45"
-          icon={<Package />}
-          trend="+5.2%"
-          isPositive={true}
+          title="Low Stock Items"
+          value="8"
+          icon={<AlertTriangle />}
+          trend="2 items critical"
+          isPositive={false}
         />
         <StatCard
           title="Total Customers"
@@ -96,10 +101,10 @@ const Dashboard: React.FC = () => {
         />
         <StatCard
           title="Avg. Order Value"
-          value="85.20"
+          value={formatCurrencyPlain(monthlySales / 234)} // Mock 234 orders
           icon={<TrendingUp />}
-          trend="-1.1%"
-          isPositive={false}
+          trend="+0.8%"
+          isPositive={true}
         />
       </div>
 
@@ -109,11 +114,11 @@ const Dashboard: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Sales Chart */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-bold text-white mb-6 font-display">
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-xl shadow-lg">
+          <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6 font-display">
             Weekly Revenue Analysis
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-64 sm:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salesData}>
                 <defs>
@@ -163,11 +168,11 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Category Distribution */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-bold text-white mb-6 font-display">
+        <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-xl shadow-lg">
+          <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6 font-display">
             Sales by Category
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-64 sm:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData} layout="vertical">
                 <CartesianGrid

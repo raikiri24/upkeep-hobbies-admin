@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuthUser } from '../types';
 import { RBAC_CONFIG, Role, Permission } from '../config/rbac';
+import { apiService } from '../services/apiService';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -36,22 +37,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing auth data on mount
+    // Check for existing auth data on mount and validate token
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
     
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setToken(storedToken);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+    const initializeAuth = async () => {
+      if (storedUser && storedToken) {
+        try {
+          const userData = JSON.parse(storedUser);
+          
+          // Validate token with local server if enabled
+          const isValid = await apiService.validateToken(storedToken);
+            
+          if (!isValid) {
+            console.log('Token expired or invalid, logging out...');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log('Setting user data:', userData);
+          console.log('User role:', userData.role);
+          console.log('User permissions check - dashboard.view:', RBAC_CONFIG.roles.find(role => role.id === userData.role)?.permissions.includes('dashboard.view'));
+          setUser(userData);
+          setToken(storedToken);
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
       }
-    }
-    
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = (userData: AuthUser, userToken: string) => {
@@ -85,8 +106,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const hasPermission = (permissionId: string): boolean => {
     const userRole = getUserRole();
-    if (!userRole) return false;
-    return userRole.permissions.includes(permissionId);
+    console.log('hasPermission Debug - permissionId:', permissionId);
+    console.log('hasPermission Debug - user:', user);
+    console.log('hasPermission Debug - userRole:', userRole);
+    console.log('hasPermission Debug - userRole.permissions:', userRole?.permissions);
+    if (!userRole) {
+      console.log('hasPermission Debug - no userRole found');
+      return false;
+    }
+    const hasPermission = userRole.permissions.includes(permissionId);
+    console.log('hasPermission Debug - result:', hasPermission);
+    return hasPermission;
   };
 
   const hasRole = (roleId: string): boolean => {

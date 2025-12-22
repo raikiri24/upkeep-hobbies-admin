@@ -1,7 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AuthProvider } from './contexts/AuthContext';
+import { QueryProvider } from './hooks';
 import App from './App';
+
+// Disable WebSocket connections in development
+if (import.meta.env.DEV) {
+  import('./disable-websocket');
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -11,8 +17,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </QueryProvider>
   </React.StrictMode>
 );

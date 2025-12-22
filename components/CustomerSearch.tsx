@@ -42,19 +42,7 @@ const CustomerSearch: React.FC<CustomerSearchProps> = ({ onClose, onSelectCustom
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
-
-    setLoading(true);
-    try {
-      const newCustomer = await apiService.createCustomer(formData);
-      onSelectCustomer(newCustomer);
-      onClose();
-    } catch (error) {
-      console.error('Failed to create customer:', error);
-      DialogService.error('Failed to create customer. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    DialogService.warning('Customer management is currently under development. This feature will be available in a future update.');
   };
 
   if (showCreateForm) {
@@ -141,7 +129,9 @@ const CustomerSearch: React.FC<CustomerSearchProps> = ({ onClose, onSelectCustom
           <h2 className="text-xl font-semibold text-white">Select Customer</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowCreateForm(true)}
+              onClick={() => {
+                DialogService.warning('Customer management is currently under development. This feature will be available in a future update.');
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
             >
               <Plus className="h-4 w-4" />

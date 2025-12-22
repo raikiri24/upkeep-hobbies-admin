@@ -66,7 +66,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold font-display text-white flex-shrink-0">
               UH
             </div>
-            <h1 className="font-display font-bold text-xl tracking-wide text-white text-left">UPKEEP<span className="text-indigo-500">ADMIN</span></h1>
+            <h1 className="font-display font-bold text-lg sm:text-xl tracking-wide text-white text-left">UPKEEP<span className="text-indigo-500">ADMIN</span></h1>
           </div>
 
           <nav className="flex-1 space-y-2">
@@ -92,7 +92,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         {/* Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur flex items-center justify-between px-6 lg:px-10 shrink-0 z-30">
+        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur flex items-center justify-between px-4 sm:px-6 lg:px-10 shrink-0 z-30">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden p-2 text-slate-400 hover:text-white"
@@ -119,7 +119,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 scroll-smooth">
           <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             {children}
           </div>

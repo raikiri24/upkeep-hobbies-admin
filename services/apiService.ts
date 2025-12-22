@@ -82,7 +82,10 @@ let mockSales: Sale[] = [
 // --- ApiService ---
 class ApiService {
   private baseUrl =
-    "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging";
+    (import.meta as any).env?.VITE_API_BASE_URL ||
+    ((import.meta as any).env?.DEV
+      ? "http://localhost:4000/upk"
+      : "https://lkjnw31n3f.execute-api.ap-northeast-1.amazonaws.com/staging");
 
   private async simulateDelay() {
     return new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
@@ -250,7 +253,11 @@ class ApiService {
     const response = await fetch(`${this.baseUrl}/sales`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...saleData, staffName, paymentStatus: 'completed' }),
+      body: JSON.stringify({
+        ...saleData,
+        staffName,
+        paymentStatus: "completed",
+      }),
     });
     return await response.json();
   }
@@ -321,6 +328,29 @@ class ApiService {
 
     const response = await fetch(`${this.baseUrl}/sales/search?${queryParams}`);
     if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  }
+
+  async updateCustomer(
+    id: string,
+    updates: Partial<Customer>
+  ): Promise<Customer> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      const index = mockCustomers.findIndex((customer) => customer.id === id);
+      if (index === -1) throw new Error("Customer not found");
+      mockCustomers[index] = {
+        ...mockCustomers[index],
+        ...updates,
+      };
+      return mockCustomers[index];
+    }
+
+    const response = await fetch(`${this.baseUrl}/customers/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
     return await response.json();
   }
 
@@ -534,7 +564,7 @@ class ApiService {
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
         },
-        token: `mock_token_${Date.now()}`,
+        accessToken: `mock_token_${Date.now()}`,
       };
     }
 
@@ -543,7 +573,18 @@ class ApiService {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(googleUser),
     });
-    return await response.json();
+    const data = await response.json();
+
+    // Transform API response to match frontend AuthUser interface
+    if (data.user) {
+      // Handle case where API returns isAdmin boolean instead of role string
+      if (data.user.isAdmin !== undefined) {
+        data.user.role = data.user.isAdmin ? "admin" : "editor";
+        delete data.user.isAdmin;
+      }
+    }
+
+    return data;
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -559,16 +600,27 @@ class ApiService {
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
         },
-        token: `mock_token_${Date.now()}`,
+        accessToken: `mock_token_${Date.now()}`,
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/auth/login`, {
+    const response = await fetch(`${this.baseUrl}/auth`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
     });
-    return await response.json();
+    const data = await response.json();
+
+    // Transform API response to match frontend AuthUser interface
+    if (data.user) {
+      // Handle case where API returns isAdmin boolean instead of role string
+      if (data.user.isAdmin !== undefined) {
+        data.user.role = data.user.isAdmin ? "admin" : "editor";
+        delete data.user.isAdmin;
+      }
+    }
+
+    return data;
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -583,7 +635,7 @@ class ApiService {
           role: "editor",
           createdAt: new Date().toISOString(),
         },
-        token: `mock_token_${Date.now()}`,
+        accessToken: `mock_token_${Date.now()}`,
       };
     }
 
@@ -592,17 +644,67 @@ class ApiService {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return await response.json();
+    const responseData = await response.json();
+
+    // Transform API response to match frontend AuthUser interface
+    if (responseData.user) {
+      // Handle case where API returns isAdmin boolean instead of role string
+      if (responseData.user.isAdmin !== undefined) {
+        responseData.user.role = responseData.user.isAdmin ? "admin" : "editor";
+        delete responseData.user.isAdmin;
+      }
+    }
+
+    return responseData;
+  }
+
+  // --- Token Validation ---
+  async validateToken(token: string): Promise<boolean> {
+    if (USE_MOCK) {
+      await this.simulateDelay();
+      // Mock validation - in real implementation, this would verify with your backend
+      try {
+        const response = await fetch(`${this.baseUrl}/auth/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        return response.ok;
+      } catch (error) {
+        console.error("Token validation error:", error);
+        return false;
+      }
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      return false;
+    }
   }
 
   // --- Newsletter ---
-  async sendNewsletter(subject: string, message: string, featuredItems: string[]): Promise<{ success: boolean; message: string }> {
+  async sendNewsletter(
+    subject: string,
+    message: string,
+    featuredItems: string[]
+  ): Promise<{ success: boolean; message: string }> {
     if (USE_MOCK) {
       await this.simulateDelay();
-      console.log('Sending newsletter:', { subject, message, featuredItems });
+      console.log("Sending newsletter:", { subject, message, featuredItems });
       return {
         success: true,
-        message: "Newsletter sent successfully to all subscribers"
+        message: "Newsletter sent successfully to all subscribers",
       };
     }
 
@@ -612,14 +714,14 @@ class ApiService {
       body: JSON.stringify({
         subject,
         message,
-        featuredItems
+        featuredItems,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error("Failed to send newsletter");
     }
-    
+
     return await response.json();
   }
 
@@ -632,29 +734,67 @@ class ApiService {
       await this.simulateDelay();
       // Mock POS report data
       const mockReport: PosReport = {
-        totalSales: 15678.50,
+        totalSales: 15678.5,
         totalTransactions: 124,
         averageSale: 126.44,
         salesByCategory: [
-          { category: 'RC Vehicles', amount: 8934.25, percentage: 57 },
-          { category: 'Drones', amount: 3921.75, percentage: 25 },
-          { category: 'Kits', amount: 2356.50, percentage: 15 },
-          { category: 'Supplies', amount: 466.00, percentage: 3 },
+          { category: "RC Vehicles", amount: 8934.25, percentage: 57 },
+          { category: "Drones", amount: 3921.75, percentage: 25 },
+          { category: "Kits", amount: 2356.5, percentage: 15 },
+          { category: "Supplies", amount: 466.0, percentage: 3 },
         ],
         paymentMethods: [
-          { method: 'cash', amount: 8234.25, percentage: 52.5 },
-          { method: 'card', amount: 5447.75, percentage: 34.7 },
-          { method: 'digital', amount: 1996.50, percentage: 12.8 },
+          { method: "cash", amount: 8234.25, percentage: 52.5 },
+          { method: "card", amount: 5447.75, percentage: 34.7 },
+          { method: "digital", amount: 1996.5, percentage: 12.8 },
+        ],
+        topSellingItems: [
+          {
+            itemId: "101",
+            itemName: "Thunderbolt RC Car 4WD",
+            quantity: 15,
+            revenue: 4499.85,
+          },
+          {
+            itemId: "102",
+            itemName: "Drone Pro X",
+            quantity: 8,
+            revenue: 2399.92,
+          },
+          {
+            itemId: "103",
+            itemName: "RC Car Kit",
+            quantity: 12,
+            revenue: 1199.88,
+          },
+        ],
+        paymentBreakdown: {
+          cash: 8234.25,
+          card: 5447.75,
+          digital: 1996.5,
+        },
+        salesByHour: [
+          { hour: 9, sales: 5, revenue: 1245.5 },
+          { hour: 10, sales: 8, revenue: 2134.25 },
+          { hour: 11, sales: 7, revenue: 1876.75 },
+          { hour: 12, sales: 9, revenue: 2342.0 },
+          { hour: 13, sales: 8, revenue: 1989.25 },
+          { hour: 14, sales: 6, revenue: 1654.5 },
+          { hour: 15, sales: 5, revenue: 1436.25 },
         ],
         hourlySales: [
-          { hour: 9, revenue: 1245.50 },
+          { hour: 9, revenue: 1245.5 },
           { hour: 10, revenue: 2134.25 },
           { hour: 11, revenue: 1876.75 },
-          { hour: 12, revenue: 2342.00 },
+          { hour: 12, revenue: 2342.0 },
           { hour: 13, revenue: 1989.25 },
-          { hour: 14, revenue: 1654.50 },
+          { hour: 14, revenue: 1654.5 },
           { hour: 15, revenue: 1436.25 },
-        ]
+        ],
+        period: {
+          start: params?.startDate || new Date().toISOString(),
+          end: params?.endDate || new Date().toISOString(),
+        },
       };
       return mockReport;
     }

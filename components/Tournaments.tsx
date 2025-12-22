@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { apiService } from "../services/apiService";
+import { apiService, useDeleteTournament } from "../hooks";
 import { Tournament, TournamentFormData, Player } from "../types";
 import { generateAvatarUrl } from "../utils/avatar";
 
@@ -7,6 +7,7 @@ const Tournaments: React.FC = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const deleteTournamentMutation = useDeleteTournament();
   const [formData, setFormData] = useState<TournamentFormData>({
     name: "",
     date: new Date(),
@@ -296,7 +297,7 @@ const Tournaments: React.FC = () => {
     
     setLoading(true);
     try {
-      await apiService.deleteTournament(selectedTournament._id);
+      await deleteTournamentMutation.mutateAsync(selectedTournament._id);
       setTournaments((prev) => prev.filter((t) => t._id !== selectedTournament._id));
       setSelectedTournament(null);
       setSuccessMessage("Tournament deleted successfully!");
