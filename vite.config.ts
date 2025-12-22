@@ -6,20 +6,20 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
 
   return {
-    base: mode === 'production' ? "/upkeep-hobbies-admin/" : "/",
+    base: "/",
     build: {
-      outDir: 'dist',
-      assetsDir: 'assets',
+      outDir: "dist",
+      assetsDir: "assets",
       sourcemap: true,
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['react', 'react-dom'],
-            router: ['react-router-dom'],
-            ui: ['lucide-react', 'recharts', 'sweetalert2']
-          }
-        }
-      }
+            vendor: ["react", "react-dom"],
+            router: ["react-router-dom"],
+            ui: ["lucide-react", "recharts", "sweetalert2"],
+          },
+        },
+      },
     },
     server: {
       port: 3000,
