@@ -58,19 +58,48 @@ const Tournaments: React.FC = () => {
   };
 
   const handleSelectTournament = (tournament: Tournament) => {
-    setSelectedTournament(tournament);
-    setFormData({
-      name: tournament.name,
-      date: tournament.date,
-      game: tournament.game,
-      season: tournament.season,
-      status: tournament.status,
-      participants: tournament.participants,
-      maxPlayers: tournament.maxPlayers,
-      standings: tournament.standings || []
-    });
-    setSuccessMessage(null);
-    setIsAddingNew(false);
+    try {
+      console.log('Selecting tournament:', tournament);
+      
+      // Validate tournament data before setting form
+      if (!tournament || !tournament.name) {
+        console.error('Invalid tournament data:', tournament);
+        setError('Invalid tournament data');
+        return;
+      }
+
+      // Handle date conversion safely
+      let tournamentDate = tournament.date;
+      if (typeof tournament.date === 'string') {
+        const parsedDate = new Date(tournament.date);
+        if (isNaN(parsedDate.getTime())) {
+          console.warn('Invalid date format, using current date:', tournament.date);
+          tournamentDate = new Date();
+        } else {
+          tournamentDate = parsedDate;
+        }
+      } else if (!(tournament.date instanceof Date)) {
+        console.warn('Date is not a Date object, using current date:', tournament.date);
+        tournamentDate = new Date();
+      }
+
+      setSelectedTournament(tournament);
+      setFormData({
+        name: tournament.name || '',
+        date: tournamentDate,
+        game: tournament.game || 'Beyblade X',
+        season: tournament.season || 1,
+        status: tournament.status || 'Scheduled',
+        participants: Array.isArray(tournament.participants) ? tournament.participants : [],
+        maxPlayers: tournament.maxPlayers || 20,
+        standings: Array.isArray(tournament.standings) ? tournament.standings : []
+      });
+      setSuccessMessage(null);
+      setIsAddingNew(false);
+    } catch (error) {
+      console.error('Error selecting tournament:', error);
+      setError('Failed to select tournament. Please try again.');
+    }
   };
 
   const handleAddNewTournament = () => {
@@ -150,17 +179,21 @@ const Tournaments: React.FC = () => {
 
   const calculateRankings = (standings: any[]) => {
     // Sort by wins first, then by fewer losses
+    if (!Array.isArray(standings)) return [];
+    
     return standings
       .map(standing => {
+        if (!standing) return null;
         const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
         return {
           ...standing,
-          wins,
-          losses,
+          wins: wins || 0,
+          losses: losses || 0,
           winRate: wins + losses > 0 ? wins / (wins + losses) : 0,
           totalGames: wins + losses
         };
       })
+      .filter(standing => standing !== null)
       .sort((a, b) => {
         // Primary: by wins (descending)
         if (b.wins !== a.wins) return b.wins - a.wins;
@@ -671,14 +704,14 @@ const Tournaments: React.FC = () => {
                               className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                             >
                               <option value="">Select winner</option>
-                              {formData.standings.map((standing) => {
-                                const player = players.find(p => p.id === standing.userId);
+                              {formData.standings?.map((standing) => {
+                                const player = players?.find(p => p.id === standing.userId);
                                 return (
                                   <option key={standing.userId} value={standing.userId}>
-                                    {player?.name || 'Unknown'}
+                                    {player?.name || 'Unknown Player'}
                                   </option>
                                 );
-                              })}
+                              }) || []}
                             </select>
                           </div>
                           <div>
@@ -688,26 +721,37 @@ const Tournaments: React.FC = () => {
                               className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                             >
                               <option value="">Select loser</option>
-                              {formData.standings.map((standing) => {
-                                const player = players.find(p => p.id === standing.userId);
+                              {formData.standings?.map((standing) => {
+                                const player = players?.find(p => p.id === standing.userId);
                                 return (
                                   <option key={standing.userId} value={standing.userId}>
-                                    {player?.name || 'Unknown'}
+                                    {player?.name || 'Unknown Player'}
                                   </option>
                                 );
-                              })}
+                              }) || []}
                             </select>
                           </div>
                           <div className="flex items-end gap-2">
                             <button
                               type="button"
                               onClick={() => {
-                                const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
-                                const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
-                                if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
-                                  addMatchResult(winnerSelect.value, loserSelect.value);
-                                  winnerSelect.value = '';
-                                  loserSelect.value = '';
+                                try {
+                                  const winnerSelect = document.getElementById('winner-select') as HTMLSelectElement;
+                                  const loserSelect = document.getElementById('loser-select') as HTMLSelectElement;
+                                  
+                                  if (!winnerSelect || !loserSelect) {
+                                    console.error('Select elements not found');
+                                    return;
+                                  }
+                                  
+                                  if (winnerSelect.value && loserSelect.value && winnerSelect.value !== loserSelect.value) {
+                                    addMatchResult(winnerSelect.value, loserSelect.value);
+                                    winnerSelect.value = '';
+                                    loserSelect.value = '';
+                                  }
+                                } catch (error) {
+                                  console.error('Error logging match:', error);
+                                  setError('Failed to log match result');
                                 }
                               }}
                               className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
@@ -753,9 +797,9 @@ const Tournaments: React.FC = () => {
                           </thead>
                           <tbody className="bg-slate-900 divide-y divide-slate-800">
                             {formData.standings
-                              .sort((a, b) => a.rank - b.rank)
+                              ?.sort((a, b) => (a.rank || 0) - (b.rank || 0))
                               .map((standing) => {
-                              const player = players.find(p => p.id === standing.userId);
+                              const player = players?.find(p => p.id === standing.userId);
                               const [wins, losses] = (standing.score || '0-0').split('-').map(Number);
                               return (
                                 <tr key={standing.userId} className="hover:bg-slate-800/50 transition-colors">

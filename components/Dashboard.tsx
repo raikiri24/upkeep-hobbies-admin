@@ -16,22 +16,9 @@ import RecentSales from "./RecentSales";
 import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from "../utils/currency";
 import { useItems } from "../hooks";
 
-const salesData = [
-  { name: "Mon", sales: 4000, orders: 24 },
-  { name: "Tue", sales: 3000, orders: 13 },
-  { name: "Wed", sales: 2000, orders: 18 },
-  { name: "Thu", sales: 2780, orders: 39 },
-  { name: "Fri", sales: 1890, orders: 48 },
-  { name: "Sat", sales: 2390, orders: 38 },
-  { name: "Sun", sales: 3490, orders: 43 },
-];
-
-const categoryData = [
-  { name: "RC Vehicles", value: 45 },
-  { name: "Drones", value: 25 },
-  { name: "Kits", value: 20 },
-  { name: "Supplies", value: 10 },
-];
+// All analytics data is currently unavailable
+const salesData = [];
+const categoryData = [];
 
 const StatCard: React.FC<{
   title: string;
@@ -66,9 +53,9 @@ const StatCard: React.FC<{
 );
 
 const Dashboard: React.FC = () => {
-  // Calculate monthly sales from mock data (in real app, this would come from API)
-  const monthlySales = salesData.reduce((total, day) => total + day.sales, 0);
-  const lowStockCount = 8; // Mock data - in real app, this would be calculated from inventory
+  // Analytics data currently unavailable
+  const monthlySales = 0;
+  const lowStockCount = 0;
   
   return (
     <div className="space-y-6">
@@ -80,31 +67,31 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Monthly Sales"
-          value={formatCurrencyPlain(monthlySales)}
+          value="Unavailable"
           icon={<ShoppingCart />}
-          trend="234 orders"
-          isPositive={true}
+          trend="No data"
+          isPositive={false}
         />
         <StatCard
           title="Low Stock Items"
-          value="8"
+          value="Unavailable"
           icon={<AlertTriangle />}
-          trend="2 items critical"
+          trend="No data"
           isPositive={false}
         />
         <StatCard
           title="Total Customers"
-          value="1,203"
+          value="Unavailable"
           icon={<Users />}
-          trend="+2.4%"
-          isPositive={true}
+          trend="No data"
+          isPositive={false}
         />
         <StatCard
           title="Avg. Order Value"
-          value={formatCurrencyPlain(monthlySales / 234)} // Mock 234 orders
+          value="Unavailable"
           icon={<TrendingUp />}
-          trend="+0.8%"
-          isPositive={true}
+          trend="No data"
+          isPositive={false}
         />
       </div>
 
@@ -118,52 +105,14 @@ const Dashboard: React.FC = () => {
           <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6 font-display">
             Weekly Revenue Analysis
           </h3>
-          <div className="h-64 sm:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#1e293b"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  stroke="#64748b"
-                  tick={{ fill: "#64748b" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  stroke="#64748b"
-                  tick={{ fill: "#64748b" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value) => formatCurrencyPlain(value)}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#0f172a",
-                    borderColor: "#334155",
-                    color: "#f8fafc",
-                  }}
-                  itemStyle={{ color: "#818cf8" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#4f46e5"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-64 sm:h-80 w-full flex flex-col items-center justify-center text-slate-500">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center">
+                <ShoppingCart className="w-8 h-8 text-slate-600" />
+              </div>
+              <p className="text-lg font-medium mb-2">Analytics Currently Unavailable</p>
+              <p className="text-sm">Sales analytics will be available in a future update</p>
+            </div>
           </div>
         </div>
 
@@ -172,41 +121,14 @@ const Dashboard: React.FC = () => {
           <h3 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6 font-display">
             Sales by Category
           </h3>
-          <div className="h-64 sm:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryData} layout="vertical">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#1e293b"
-                  horizontal={true}
-                  vertical={false}
-                />
-                <XAxis type="number" hide />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  width={100}
-                  stroke="#94a3b8"
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "#1e293b" }}
-                  contentStyle={{
-                    backgroundColor: "#0f172a",
-                    borderColor: "#334155",
-                    color: "#f8fafc",
-                  }}
-                />
-                <Bar
-                  dataKey="value"
-                  fill="#3b82f6"
-                  radius={[0, 4, 4, 0]}
-                  barSize={20}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-64 sm:h-80 w-full flex flex-col items-center justify-center text-slate-500">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-slate-600" />
+              </div>
+              <p className="text-lg font-medium mb-2">Analytics Currently Unavailable</p>
+              <p className="text-sm">Category analytics will be available in a future update</p>
+            </div>
           </div>
         </div>
       </div>

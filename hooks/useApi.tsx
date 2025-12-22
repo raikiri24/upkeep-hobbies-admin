@@ -219,6 +219,7 @@ export const useUpdateItem = () => {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Item> }) => 
       apiService.updateItem(id, updates),
     onSuccess: () => {
+      // Invalidate all items queries to ensure refetch with current filters
       queryClient.invalidateQueries({ queryKey: ['items'] });
     },
   });
@@ -230,7 +231,10 @@ export const useDeleteItem = () => {
   return useMutation({
     mutationFn: (id: string) => apiService.deleteItem(id),
     onSuccess: () => {
+      // Invalidate all items queries to ensure refetch with current filters
       queryClient.invalidateQueries({ queryKey: ['items'] });
+      // Also refetch immediately to ensure UI updates
+      queryClient.refetchQueries({ queryKey: ['items'] });
     },
   });
 };

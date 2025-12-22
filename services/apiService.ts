@@ -163,10 +163,10 @@ class ApiService {
       return mockItems[key];
     }
 
-    const response = await fetch(`${this.baseUrl}/updateItem`, {
+    const response = await fetch(`${this.baseUrl}/updateItem/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
+      body: JSON.stringify(updates),
     });
     return await response.json();
   }
@@ -180,10 +180,9 @@ class ApiService {
       return true;
     }
 
-    const response = await fetch(`${this.baseUrl}/deleteItems`, {
+    const response = await fetch(`${this.baseUrl}/deleteItem/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
     });
     return response.ok;
   }
@@ -475,7 +474,7 @@ class ApiService {
     const response = await fetch(`${this.baseUrl}/tournaments/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
+      body: JSON.stringify(updates),
     });
     return await response.json();
   }
@@ -529,10 +528,10 @@ class ApiService {
       return updatedPlayer;
     }
 
-    const response = await fetch(`${this.baseUrl}/updatePlayer/${id}`, {
+    const response = await fetch(`${this.baseUrl}/players/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
+      body: JSON.stringify(updates),
     });
     return await response.json();
   }
