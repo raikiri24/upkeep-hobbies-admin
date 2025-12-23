@@ -4,6 +4,7 @@ import { Item, ItemFormData } from '../types';
 import { Plus, Trash2, Edit2, Search, Package, AlertCircle, Loader2, Save, X, ImageIcon, ShoppingCart } from 'lucide-react';
 import { DialogService } from '../services/dialogService';
 import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from '../utils/currency';
+import { SafeImage } from './SafeImage';
 
 const Inventory: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -160,11 +161,12 @@ const Inventory: React.FC = () => {
                 <div className="flex gap-4">
                   {/* Image */}
                   <div className="w-16 h-16 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center shrink-0">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="text-slate-600 w-6 h-6" />
-                    )}
+                    <SafeImage 
+                      src={item.imageUrl} 
+                      alt={item.name} 
+                      className="w-full h-full"
+                      fallbackClassName="w-5 h-5"
+                    />
                   </div>
 
                   {/* Main Content */}
@@ -394,9 +396,8 @@ const Inventory: React.FC = () => {
                     <option>Model Kits</option>
                     <option>Supplies</option>
                     <option>Tools</option>
-                    <option>Beyblade</option>
-                    <option>Unmatched</option>
-                    <option>Magic: The Gathering</option>
+
+
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -450,7 +451,11 @@ const Inventory: React.FC = () => {
                     />
                     <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex items-center justify-center">
                        {formData.imageUrl ? (
-                         <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                         <SafeImage 
+                          src={formData.imageUrl} 
+                          alt="Preview" 
+                          className="w-full h-full"
+                        />
                        ) : (
                          <ImageIcon className="text-slate-600 w-4 h-4 sm:w-5 sm:h-5" />
                        )}

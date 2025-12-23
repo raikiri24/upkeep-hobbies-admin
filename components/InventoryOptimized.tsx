@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useItems, useCreateItem, useUpdateItem, useDeleteItem } from '../hooks';
 import { Item, ItemFormData } from '../types';
 import { Plus, Trash2, Edit2, Search, Package, AlertCircle, Loader2, Save, X, ImageIcon } from 'lucide-react';
+import { SafeImage } from './SafeImage';
 import { DialogService } from '../services/dialogService';
 import { formatCurrency, getCurrencySymbol, formatCurrencyPlain } from '../utils/currency';
 import { VirtualScroll } from '../hooks/useVirtualScroll';
@@ -124,7 +125,25 @@ const InventoryOptimized: React.FC = () => {
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 shrink-0 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
             {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+              <img 
+                src={item.imageUrl} 
+                alt={item.name} 
+                className="w-full h-full object-cover"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const icon = document.createElement('div');
+                    icon.innerHTML = '<svg class="text-slate-600 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+                    parent.appendChild(icon);
+                  }
+                }}
+                onLoad={() => {
+                  // Image loaded successfully
+                }}
+              />
             ) : (
               <ImageIcon className="text-slate-600 w-5 h-5" />
             )}
@@ -191,11 +210,12 @@ const InventoryOptimized: React.FC = () => {
       {/* Desktop Table Row */}
       <div className="hidden sm:flex items-center gap-4 p-4">
         <div className="w-12 h-12 shrink-0 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
-          {item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-          ) : (
-            <ImageIcon className="text-slate-600 w-6 h-6" />
-          )}
+            <SafeImage 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full"
+              fallbackClassName="w-5 h-5"
+            />
         </div>
         
         <div className="flex-1 min-w-0">
@@ -440,9 +460,8 @@ const InventoryOptimized: React.FC = () => {
                     <option>Model Kits</option>
                     <option>Supplies</option>
                     <option>Tools</option>
-                    <option>Beyblade</option>
-                    <option>Unmatched</option>
-                    <option>Magic the Gathering</option>
+
+
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -494,7 +513,11 @@ const InventoryOptimized: React.FC = () => {
                     />
                     <div className="w-11 h-11 shrink-0 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex items-center justify-center">
                        {formData.imageUrl ? (
-                         <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                         <SafeImage 
+                          src={formData.imageUrl} 
+                          alt="Preview" 
+                          className="w-full h-full"
+                        />
                        ) : (
                          <ImageIcon className="text-slate-600 w-5 h-5" />
                        )}
