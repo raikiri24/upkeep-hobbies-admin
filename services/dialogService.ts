@@ -37,10 +37,10 @@ export const DialogService = {
     });
   },
 
-  confirm: (message: string, title: string = 'Are you sure?') => {
+  confirm: (message: string, title: string = 'Are you sure?', useHtml: boolean = false) => {
     return Swal.fire({
       title,
-      text: message,
+      [useHtml ? 'html' : 'text']: message,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',

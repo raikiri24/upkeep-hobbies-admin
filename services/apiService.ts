@@ -544,7 +544,7 @@ class ApiService {
       return updatedPlayer;
     }
 
-    const response = await fetch(`${this.baseUrl}/players/${id}`, {
+    const response = await fetch(`${this.baseUrl}/updatePlayer/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
